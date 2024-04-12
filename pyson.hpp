@@ -54,6 +54,16 @@ public:
 
     friend std::ostream& operator<< (std::ostream& o, const PysonValue& val);
 
+    bool is_int() const { return this->int_value.type == PysonType::PysonInt; }
+    bool is_float() const { return this->float_value.type == PysonType::PysonFloat; }
+    bool is_str() const { return this->str_value.type == PysonType::PysonStr; }
+    bool is_str_list() const { return this->str_list_value.type == PysonType::PysonStrList; }
+
+    explicit PysonValue(const PysonValue&);
+    explicit PysonValue(PysonValue&&);
+    PysonValue& operator= (const PysonValue&);
+    PysonValue& operator= (PysonValue&&);
+
     PysonValue(int int_value) : int_value(int_value) {}
     PysonValue(double float_value) : float_value(float_value) {}
     PysonValue(const std::string& str_value) : str_value(str_value) {}
@@ -62,6 +72,17 @@ public:
     PysonValue(std::vector<std::string>&& str_list_value) : str_list_value(str_list_value) {}
 
     ~PysonValue();
+
+};
+
+class NamedPysonValue {
+
+public:
+
+    std::string name;
+    PysonValue value;
+
+    NamedPysonValue(const std::string& name, const PysonValue& value) : name(name), value(value) {}
 
 };
 
