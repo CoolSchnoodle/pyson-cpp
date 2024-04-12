@@ -1,4 +1,5 @@
 #include "pyson.hpp"
+#include <iterator>
 
 PysonValue::~PysonValue() {
     
@@ -23,7 +24,12 @@ std::ostream& operator<< (std::ostream& o, const PysonValue& val) {
         case PysonValue::PysonType::PysonInt: o << val.int_value.value; break;
         case PysonValue::PysonType::PysonFloat: o << val.float_value.value; break;
         case PysonValue::PysonType::PysonStr: o << val.str_value.value; break;
-        case PysonValue::PysonType::PysonStrList: o << val.str_list_value.value; break;
+        case PysonValue::PysonType::PysonStrList: {
+            o << "[\n";
+            for (const std::string& str : val.str_list_value.value) { o << "\t" << str << "," << "\n"; }
+            o << "]";
+            break;
+        }
     }
     return o;
 }

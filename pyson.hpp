@@ -21,21 +21,18 @@ private:
     struct PysonInt {
         const PysonType type = PysonType::PysonInt;
         int value;
-        PysonInt() : value(0) {} 
         PysonInt(int value) : value(value) {}
     };
 
     struct PysonFloat {
         const PysonType type = PysonType::PysonFloat;
         double value;
-        PysonFloat() : value(0.0) {}
         PysonFloat(float value) : value(value) {}
     };
 
     struct PysonStr {
         const PysonType type = PysonType::PysonStr;
         std::string value;
-        PysonStr() : value("") {}
         PysonStr(const std::string& value) : value(value){}
         PysonStr(std::string&& value) : value(value){}
     };
@@ -43,9 +40,8 @@ private:
     struct PysonStrList {
         const PysonType type = PysonType::PysonStrList;
         std::vector<std::string> value;
-        PysonStrList() : value(std::vector<std::string>()) {}
-        PysonStrList(const std::vector<std::string>& value) {}
-        PysonStrList(std::vector<std::string>&& value) {}
+        PysonStrList(const std::vector<std::string>& value) : value(value) {}
+        PysonStrList(std::vector<std::string>&& value) : value(value) {}
     };
 
 
