@@ -19,21 +19,21 @@ public:
 private:
 
     struct PysonInt {
-        PysonType type;
+        const PysonType type = PysonType::PysonInt;
         int value;
-        PysonInt() : value(0), type(PysonType::PysonInt) {} 
-        PysonInt(int value) : value(value), type(PysonType::PysonInt) {}
+        PysonInt() : value(0) {} 
+        PysonInt(int value) : value(value) {}
     };
 
     struct PysonFloat {
-        PysonType type = PysonType::PysonFloat;
-        float value;
+        const PysonType type = PysonType::PysonFloat;
+        double value;
         PysonFloat() : value(0.0) {}
         PysonFloat(float value) : value(value) {}
     };
 
     struct PysonStr {
-        PysonType type = PysonType::PysonStr;
+        const PysonType type = PysonType::PysonStr;
         std::string value;
         PysonStr() : value("") {}
         PysonStr(const std::string& value) : value(value){}
@@ -41,11 +41,11 @@ private:
     };
 
     struct PysonStrList {
-        PysonType type;
+        const PysonType type = PysonType::PysonStrList;
         std::vector<std::string> value;
-        PysonStrList() : value(std::vector<std::string>()), type(PysonType::PysonStrList) {}
-        PysonStrList(const std::vector<std::string>& value) : value(value), type(PysonType::PysonStrList) {}
-        PysonStrList(std::vector<std::string>&& value) : value(value), type(PysonType::PysonStrList) {}
+        PysonStrList() : value(std::vector<std::string>()) {}
+        PysonStrList(const std::vector<std::string>& value) {}
+        PysonStrList(std::vector<std::string>&& value) {}
     };
 
 
@@ -59,7 +59,7 @@ public:
     friend std::ostream& operator<< (std::ostream& o, const PysonValue& val);
 
     PysonValue(int int_value) : int_value(int_value) {}
-    PysonValue(float float_value) : float_value(float_value) {}
+    PysonValue(double float_value) : float_value(float_value) {}
     PysonValue(const std::string& str_value) : str_value(str_value) {}
     PysonValue(std::string&& str_value) : str_value(str_value) {}
     PysonValue(const std::vector<std::string>& str_list_value) : str_list_value(str_list_value) {}

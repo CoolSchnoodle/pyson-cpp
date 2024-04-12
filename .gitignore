@@ -37,3 +37,4 @@ main.cpp
 replit.nix
 .replit
 .ccls-cache/
+.breakpoints

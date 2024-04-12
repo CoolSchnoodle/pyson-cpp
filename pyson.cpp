@@ -20,10 +20,10 @@ PysonValue::~PysonValue() {
 
 std::ostream& operator<< (std::ostream& o, const PysonValue& val) {
     switch (val.int_value.type) {
-        case PysonValue::PysonType::PysonInt: o << val.int_value.value;
-        case PysonValue::PysonType::PysonFloat: o << val.float_value.value;
-        case PysonValue::PysonType::PysonStr: o << val.str_value.value;
-        case PysonValue::PysonType::PysonStrList: o << val.str_list_value.value;
+        case PysonValue::PysonType::PysonInt: o << val.int_value.value; break;
+        case PysonValue::PysonType::PysonFloat: o << val.float_value.value; break;
+        case PysonValue::PysonType::PysonStr: o << val.str_value.value; break;
+        case PysonValue::PysonType::PysonStrList: o << val.str_list_value.value; break;
     }
     return o;
 }
