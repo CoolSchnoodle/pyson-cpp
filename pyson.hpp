@@ -5,6 +5,8 @@
 #include <vector>
 #include <iostream>
 
+class NamedPysonValue;
+
 union PysonValue {
 
 public:
@@ -52,37 +54,57 @@ private:
 
 public:
 
+    friend class NamedPysonValue;
+    
     friend std::ostream& operator<< (std::ostream& o, const PysonValue& val);
 
-    bool is_int() const { return this->int_value.type == PysonType::PysonInt; }
-    bool is_float() const { return this->float_value.type == PysonType::PysonFloat; }
-    bool is_str() const { return this->str_value.type == PysonType::PysonStr; }
-    bool is_str_list() const { return this->str_list_value.type == PysonType::PysonStrList; }
+    bool is_int() const noexcept { return this->int_value.type == PysonType::PysonInt; }
+    bool is_float() const noexcept { return this->float_value.type == PysonType::PysonFloat; }
+    bool is_str() const noexcept { return this->str_value.type == PysonType::PysonStr; }
+    bool is_str_list() const noexcept { return this->str_list_value.type == PysonType::PysonStrList; }
 
-    explicit PysonValue(const PysonValue&);
-    explicit PysonValue(PysonValue&&);
+    PysonType get_type() const noexcept { return this->int_value.type; }
+    std::string get_type_string() const noexcept;
+    const char *get_type_cstring() const noexcept;
+
+    std::string value_as_string() const noexcept;
+
+    PysonValue(const PysonValue&);
+    PysonValue(PysonValue&&);
     PysonValue& operator= (const PysonValue&);
     PysonValue& operator= (PysonValue&&);
 
-    PysonValue(int int_value) : int_value(int_value) {}
-    PysonValue(double float_value) : float_value(float_value) {}
-    PysonValue(const std::string& str_value) : str_value(str_value) {}
-    PysonValue(std::string&& str_value) : str_value(str_value) {}
-    PysonValue(const std::vector<std::string>& str_list_value) : str_list_value(str_list_value) {}
-    PysonValue(std::vector<std::string>&& str_list_value) : str_list_value(str_list_value) {}
+    explicit PysonValue(int int_value) : int_value(int_value) {}
+    explicit PysonValue(double float_value) : float_value(float_value) {}
+    explicit PysonValue(const std::string& str_value) : str_value(str_value) {}
+    explicit PysonValue(std::string&& str_value) : str_value(str_value) {}
+    explicit PysonValue(const std::vector<std::string>& str_list_value) : str_list_value(str_list_value) {}
+    explicit PysonValue(std::vector<std::string>&& str_list_value) : str_list_value(str_list_value) {}
 
-    ~PysonValue();
+    ~PysonValue() noexcept;
 
 };
 
 class NamedPysonValue {
-
-public:
-
+    
     std::string name;
     PysonValue value;
 
-    NamedPysonValue(const std::string& name, const PysonValue& value) : name(name), value(value) {}
+public:
+
+    friend std::ostream& operator<< (std::ostream& o, NamedPysonValue& v);
+    friend bool operator>> (std::istream& i, NamedPysonValue& v);
+
+    explicit NamedPysonValue(const std::string& name, const PysonValue& value) : name(name), value(value) {}
+    explicit NamedPysonValue(const std::string& name, PysonValue&& value) : name(name), value(value) {}
+    explicit NamedPysonValue(std::string&& name, const PysonValue& value) : name(name), value(value) {}
+    explicit NamedPysonValue(std::string&& name, PysonValue&& value) : name(name), value(value) {}
+
+    std::string get_name() const noexcept { return this->name; }
+    PysonValue get_value() const noexcept { return this->value; }
+
+    void change_name(const std::string& new_name) noexcept { this->name = new_name; }
+    void change_value(const PysonValue& new_value) noexcept { this->value = new_value; }
 
 };
 

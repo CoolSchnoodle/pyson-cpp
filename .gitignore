@@ -38,3 +38,4 @@ replit.nix
 .replit
 .ccls-cache/
 .breakpoints
+.ccls

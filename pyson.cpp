@@ -2,7 +2,7 @@
 #include <iterator>
 #include <cstring>
 
-PysonValue::~PysonValue() {
+PysonValue::~PysonValue() noexcept {
     
     // because all variants start with a `type` field
     // with type PysonType, no undefined behavior
@@ -35,8 +35,8 @@ std::ostream& operator<< (std::ostream& o, const PysonValue& val) {
         case PysonValue::PysonType::PysonStr: o << val.str_value.value; break;
         
         case PysonValue::PysonType::PysonStrList: {
-            o << "[\n";
-            for (const std::string& str : val.str_list_value.value) { o << "\t" << str << "," << "\n"; }
+            o << "[";
+            for (const std::string& str : val.str_list_value.value) { o << str << ","; }
             o << "]";
             break;
         }
@@ -136,4 +136,9 @@ PysonValue& PysonValue::operator= (PysonValue&& other) {
 
     return *this;
     
+}
+
+std::ostream& operator<< (std::ostream& o, NamedPysonValue& v) {
+    o << v.name << ':' << v.value.get_type_cstring() << ':' << v.value.value_as_string();
+    return o;
 }
