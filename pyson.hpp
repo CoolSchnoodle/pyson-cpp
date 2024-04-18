@@ -58,14 +58,14 @@ public:
     
     friend std::ostream& operator<< (std::ostream& o, const PysonValue& val);
 
-    bool is_int() const noexcept { return this->int_value.type == PysonType::PysonInt; }
-    bool is_float() const noexcept { return this->float_value.type == PysonType::PysonFloat; }
-    bool is_str() const noexcept { return this->str_value.type == PysonType::PysonStr; }
-    bool is_str_list() const noexcept { return this->str_list_value.type == PysonType::PysonStrList; }
-
     PysonType get_type() const noexcept { return this->int_value.type; }
-    std::string get_type_string() const noexcept;
     const char *get_type_cstring() const noexcept;
+    std::string get_type_string() const noexcept { return this->get_type_cstring(); }
+
+    bool is_int() const noexcept { return this->get_type() == PysonType::PysonInt; }
+    bool is_float() const noexcept { return this->get_type() == PysonType::PysonFloat; }
+    bool is_str() const noexcept { return this->get_type() == PysonType::PysonStr; }
+    bool is_str_list() const noexcept { return this->get_type() == PysonType::PysonStrList; }
 
     std::string value_as_string() const noexcept;
 
