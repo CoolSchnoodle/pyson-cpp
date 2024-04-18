@@ -168,7 +168,52 @@ std::string PysonValue::value_as_string() const noexcept {
     }
 }
 
+PysonValue PysonValue::from_pyson_list(std::string pyson_list) {
+    PysonValue value(std::vector<std::string>{});
+    std::string current_token{};
+    for (char c : pyson_list) {
+        current_token.push_back(c);
+        size_t size = current_token.length();
+        if (size >= 3 && current_token.substr(size-4, 3) == "(*)") {
+            value.str_list_value.value.push_back(current_token.substr(0, size-4));
+            current_token.clear();
+        }
+    }
+    return value;
+}
+
 std::ostream& operator<< (std::ostream& o, NamedPysonValue& v) {
     o << v.name << ':' << v.value.get_type_cstring() << ':' << v.value.value_as_string();
     return o;
+}
+
+bool operator>> (std::istream& i, NamedPysonValue& v) {
+    
+    std::string current_token{};
+    
+    std::getline(i, current_token, ':');
+    for (char c : current_token) if (c == '\n') return false;
+    v.change_name(current_token);
+
+    std::getline(i, current_token, ':');
+    if (current_token == "int") v.value.int_value.type = PysonValue::PysonType::PysonFloat;
+    else if (current_token == "float") v.value.float_value.type = PysonValue::PysonType::PysonFloat;
+    else if (current_token == "str") v.value.str_value.type = PysonValue::PysonType::PysonStr;
+    else if (current_token == "list") v.value.str_list_value.type = PysonValue::PysonType::PysonStrList;
+    else return false;
+
+    std::getline(i, current_token);
+    switch (v.value.get_type()) {
+        case PysonValue::PysonType::PysonInt:
+            try { v.value.int_value.value = std::stoi(current_token); break; }
+            catch (...) { return false; }
+        case PysonValue::PysonType::PysonFloat:
+            try { v.value.float_value.value = std::stod(current_token); break; }
+            catch(...) { return false; }
+        case PysonValue::PysonType::PysonStr: v.value.str_value.value = current_token; break;
+        case PysonValue::PysonType::PysonStrList: v.value = PysonValue::from_pyson_list(current_token); break;
+    }
+
+    return true;
+    
 }

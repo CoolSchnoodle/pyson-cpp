@@ -21,26 +21,26 @@ public:
 private:
 
     struct PysonInt {
-        const PysonType type = PysonType::PysonInt;
+        PysonType type = PysonType::PysonInt;
         int value;
         PysonInt(int value) : value(value) {}
     };
 
     struct PysonFloat {
-        const PysonType type = PysonType::PysonFloat;
+        PysonType type = PysonType::PysonFloat;
         double value;
         PysonFloat(float value) : value(value) {}
     };
 
     struct PysonStr {
-        const PysonType type = PysonType::PysonStr;
+        PysonType type = PysonType::PysonStr;
         std::string value;
         PysonStr(const std::string& value) : value(value){}
         PysonStr(std::string&& value) : value(value){}
     };
 
     struct PysonStrList {
-        const PysonType type = PysonType::PysonStrList;
+        PysonType type = PysonType::PysonStrList;
         std::vector<std::string> value;
         PysonStrList(const std::vector<std::string>& value) : value(value) {}
         PysonStrList(std::vector<std::string>&& value) : value(value) {}
@@ -55,7 +55,8 @@ private:
 public:
 
     friend class NamedPysonValue;
-    
+        friend bool operator>> (std::istream& i, NamedPysonValue& v);
+
     friend std::ostream& operator<< (std::ostream& o, const PysonValue& val);
 
     PysonType get_type() const noexcept { return this->int_value.type; }
@@ -74,6 +75,7 @@ public:
     PysonValue& operator= (const PysonValue&);
     PysonValue& operator= (PysonValue&&);
 
+    static PysonValue from_pyson_list(std::string pyson_list);
     explicit PysonValue(int int_value) : int_value(int_value) {}
     explicit PysonValue(double float_value) : float_value(float_value) {}
     explicit PysonValue(const std::string& str_value) : str_value(str_value) {}
