@@ -3,54 +3,52 @@
 
 #include <string>
 #include <vector>
-#include <iostream>
+#include <iosfwd>
 
+class PysonValue;
 class NamedPysonValue;
 
-union PysonValue {
+enum class PysonType {
+    PysonInt,
+    PysonFloat,
+    PysonStr,
+    PysonStrList,
+};
 
-public:
+union PysonValueInner {
 
-    enum class PysonType {
-        PysonInt,
-        PysonFloat,
-        PysonStr,
-        PysonStrList,
-    };
+    friend class PysonValue;
+        friend std::ostream& operator<< (std::ostream& o, const PysonValue& val);
+    friend class NamedPysonValue;
 
 private:
 
-    struct PysonInt {
-        PysonType type = PysonType::PysonInt;
-        int value;
-        PysonInt(int value) : value(value) {}
-    };
-
-    struct PysonFloat {
-        PysonType type = PysonType::PysonFloat;
-        double value;
-        PysonFloat(float value) : value(value) {}
-    };
-
-    struct PysonStr {
-        PysonType type = PysonType::PysonStr;
-        std::string value;
-        PysonStr(const std::string& value) : value(value){}
-        PysonStr(std::string&& value) : value(value){}
-    };
-
-    struct PysonStrList {
-        PysonType type = PysonType::PysonStrList;
-        std::vector<std::string> value;
-        PysonStrList(const std::vector<std::string>& value) : value(value) {}
-        PysonStrList(std::vector<std::string>&& value) : value(value) {}
-    };
-
+    using PysonInt = int;
+    using PysonFloat = double;
+    using PysonStr = std::string;
+    using PysonStrList = std::vector<std::string>;
 
     PysonInt int_value;
     PysonFloat float_value;
     PysonStr str_value;
     PysonStrList str_list_value;
+
+    PysonValueInner(int val) noexcept : int_value(val) {}
+    PysonValueInner(double val) noexcept : float_value(val) {}
+    PysonValueInner(const std::string& str) noexcept : str_value(str) {}
+    PysonValueInner(std::string&& str) noexcept : str_value(str) {}
+    PysonValueInner(const std::vector<std::string>& list) noexcept : str_list_value(list) {}
+    PysonValueInner(std::vector<std::string>&& list) noexcept : str_list_value(list) {}
+
+    // You don't get a PysonValueInner, only a PysonValue can get one and their destructor takes care of it
+    ~PysonValueInner() noexcept {}
+
+};
+
+class PysonValue {
+
+    PysonType type;
+    PysonValueInner value;
 
 public:
 
@@ -59,7 +57,7 @@ public:
 
     friend std::ostream& operator<< (std::ostream& o, const PysonValue& val);
 
-    PysonType get_type() const noexcept { return this->int_value.type; }
+    PysonType get_type() const noexcept { return this->type; }
     const char *get_type_cstring() const noexcept;
     std::string get_type_string() const noexcept { return this->get_type_cstring(); }
 
@@ -76,14 +74,15 @@ public:
     PysonValue& operator= (PysonValue&&);
 
     static PysonValue from_pyson_list(std::string pyson_list);
-    explicit PysonValue(int int_value) : int_value(int_value) {}
-    explicit PysonValue(double float_value) : float_value(float_value) {}
-    explicit PysonValue(const std::string& str_value) : str_value(str_value) {}
-    explicit PysonValue(std::string&& str_value) : str_value(str_value) {}
-    explicit PysonValue(const std::vector<std::string>& str_list_value) : str_list_value(str_list_value) {}
-    explicit PysonValue(std::vector<std::string>&& str_list_value) : str_list_value(str_list_value) {}
+    explicit PysonValue(int val) : type(PysonType::PysonInt), value(val) {}
+    explicit PysonValue(double val) : type(PysonType::PysonFloat), value(val) {}
+    explicit PysonValue(const std::string& str) : type(PysonType::PysonStr), value(str) {}
+    explicit PysonValue(std::string&& str) : type(PysonType::PysonStr), value(str) {}
+    explicit PysonValue(const std::vector<std::string>& list) : type(PysonType::PysonStrList), value(list) {}
+    explicit PysonValue(std::vector<std::string>&& list) : type(PysonType::PysonStrList), value(list) {}
 
     ~PysonValue() noexcept;
+
 
 };
 
