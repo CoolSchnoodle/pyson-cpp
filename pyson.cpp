@@ -1,24 +1,34 @@
 #include "pyson.hpp"
 #include <iterator>
+#include <iostream>
 #include <cstring>
 #include <sstream>
+#include <new>
 
 // PysonValue destructor
 PysonValue::~PysonValue() noexcept {
+
+    std::cout << "PysonValue dtor called\n";
     
     switch (this->get_type()) {
         
         case PysonType::PysonInt:
         case PysonType::PysonFloat:
-            break;
+            std::cout << "Was an int or float\n";
+            return;
         
         case PysonType::PysonStr:
+            std::cout << "Was a string: " << std::flush;
+            std::cout << this->value.str_value << "\n";
             this->value.str_value.~basic_string();
-            break;
+            std::cout << "Destructed string\n";
+            return;
         
         case PysonType::PysonStrList:
+            std::cout << "Was a list: " << std::flush << this->value_as_string() << "\n";
             this->value.str_list_value.~vector();
-            break;
+            std::cout << "Destructed list\n";
+            return;
         
     }
     
@@ -42,14 +52,17 @@ PysonValue::PysonValue(const PysonValue& other) : value(0) {
         case PysonType::PysonInt:
         case PysonType::PysonFloat:
             std::memcpy(this, &other, sizeof(PysonValue));
-            break;
+            return;
 
         case PysonType::PysonStr:
-            this->value.str_value = other.value.str_value;
-            break;
+            new(&this->value.str_value) std::string(other.value.str_value);
+            this->type = PysonType::PysonStr;
+            return;
 
         case PysonType::PysonStrList:
-            this->value.str_list_value = other.value.str_list_value;
+            new(&this->value.str_list_value) std::vector<std::string>(other.value.str_list_value);
+            this->type = PysonType::PysonStrList;
+            return;
 
     }
 
@@ -67,20 +80,24 @@ PysonValue::PysonValue(PysonValue&& other) : value(0) {
             break;
 
         case PysonType::PysonStr:
-            this->value.str_value = other.value.str_value;
+            new(&this->value.str_value) std::string(std::move(other.value.str_value));
+            this->type = PysonType::PysonStr;
             break;
 
         case PysonType::PysonStrList:
-            this->value.str_list_value = other.value.str_list_value;
+            new(&this->value.str_list_value) std::vector<std::string>(std::move(other.value.str_list_value));
+            this->type = PysonType::PysonStrList;
+            break;
 
     }
 
 }
 // PysonValue copy assignment
 PysonValue& PysonValue::operator= (const PysonValue& other) {
-    
-    // (same code as copy constructor other than `return *this` at the end)
 
+    std::cout << "PysonValue copy assignment called\n";
+    this->~PysonValue();
+    
     switch (other.get_type()) {
 
         case PysonType::PysonInt:
@@ -89,11 +106,14 @@ PysonValue& PysonValue::operator= (const PysonValue& other) {
             break;
 
         case PysonType::PysonStr:
-            this->value.str_value = other.value.str_value;
+            new(&this->value.str_value) std::string(other.value.str_value);
+            this->type = PysonType::PysonStr;
             break;
 
         case PysonType::PysonStrList:
-            this->value.str_list_value = other.value.str_list_value;
+            new(&this->value.str_list_value) std::vector<std::string>(other.value.str_list_value);
+            this->type = PysonType::PysonStrList;
+            break;
 
     }
 
@@ -103,8 +123,9 @@ PysonValue& PysonValue::operator= (const PysonValue& other) {
 // PysonValue move assignment
 PysonValue& PysonValue::operator= (PysonValue&& other) {
 
-    // (same code as copy constructor other than `return *this` at the end)
-
+    std::cout << "PysonValue move assignment called\n";
+    this->~PysonValue();
+    
     switch (other.get_type()) {
 
         case PysonType::PysonInt:
@@ -113,11 +134,14 @@ PysonValue& PysonValue::operator= (PysonValue&& other) {
             break;
 
         case PysonType::PysonStr:
-            this->value.str_value = other.value.str_value;
+            this->type = PysonType::PysonStr;
+            new(&this->value.str_value) std::string(std::move(other.value.str_value));
             break;
 
         case PysonType::PysonStrList:
-            this->value.str_list_value = other.value.str_list_value;
+            this->type = PysonType::PysonStrList;
+            new(&this->value.str_list_value) std::vector<std::string>(std::move(other.value.str_list_value));
+            break;
 
     }
 
@@ -143,6 +167,7 @@ std::string PysonValue::value_as_string() const noexcept {
         case PysonType::PysonStr: return this->value.str_value;
         case PysonType::PysonStrList: {
             std::ostringstream pyson_list;
+            if (this->value.str_list_value.empty()) return "";
             std::copy(
                 this->value.str_list_value.begin(),
                 this->value.str_list_value.end(),
@@ -164,11 +189,17 @@ PysonValue PysonValue::from_pyson_list(std::string pyson_list) {
     for (char c : pyson_list) {
         current_token.push_back(c);
         size_t size = current_token.length();
-        if (size >= 3 && current_token.substr(size-4, 3) == "(*)") {
-            value.value.str_list_value.push_back(current_token.substr(0, size-4));
+        if (
+            size > 3
+            && current_token[size-3] == '('
+            && current_token[size-2] == '*'
+            && current_token[size-1] == ')'
+        ){
+            value.value.str_list_value.push_back(current_token.substr(0, size-3));
             current_token.clear();
         }
     }
+    value.value.str_list_value.push_back(current_token);
     return value;
 }
 
@@ -188,13 +219,15 @@ bool operator>> (std::istream& i, NamedPysonValue& v) {
     v.change_name(current_token);
 
     std::getline(i, current_token, ':');
-    if (current_token == "int") v.value.type = PysonType::PysonFloat;
-    else if (current_token == "float") v.value.type = PysonType::PysonFloat;
-    else if (current_token == "str") v.value.type = PysonType::PysonStr;
-    else if (current_token == "list") v.value.type = PysonType::PysonStrList;
-    else return false;
+    std::cout << "type string is " << current_token << "\n";
+    if (current_token == "int") { v.value.type = PysonType::PysonInt; }
+    else if (current_token == "float") { v.value.type = PysonType::PysonFloat; }
+    else if (current_token == "str") { v.value = PysonValue(""); }
+    else if (current_token == "list") { v.value = PysonValue(std::vector<std::string>{}); }
+    else { return false; }
 
     std::getline(i, current_token);
+    std::cout << "current token is " << current_token << "\n";
     switch (v.value.get_type()) {
         case PysonType::PysonInt:
             try { v.value = PysonValue(std::stoi(current_token)); break; }
@@ -202,7 +235,12 @@ bool operator>> (std::istream& i, NamedPysonValue& v) {
         case PysonType::PysonFloat:
             try { v.value = PysonValue(std::stod(current_token)); break; }
             catch(...) { return false; }
-        case PysonType::PysonStr: v.value = PysonValue(current_token); break;
+        case PysonType::PysonStr: {
+            std::cout << "Found a str\n";
+            v.value = PysonValue(current_token);
+            std::cout << "Value assigned: " << v.value.value_as_string() << "\n";
+            break;
+        }
         case PysonType::PysonStrList: v.value = PysonValue::from_pyson_list(current_token); break;
     }
 

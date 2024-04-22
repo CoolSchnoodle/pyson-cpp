@@ -23,15 +23,10 @@ union PysonValueInner {
 
 private:
 
-    using PysonInt = int;
-    using PysonFloat = double;
-    using PysonStr = std::string;
-    using PysonStrList = std::vector<std::string>;
-
-    PysonInt int_value;
-    PysonFloat float_value;
-    PysonStr str_value;
-    PysonStrList str_list_value;
+    int int_value;
+    double float_value;
+    std::string str_value;
+    std::vector<std::string> str_list_value;
 
     PysonValueInner(int val) noexcept : int_value(val) {}
     PysonValueInner(double val) noexcept : float_value(val) {}
