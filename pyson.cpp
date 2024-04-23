@@ -1,33 +1,24 @@
 #include "pyson.hpp"
 #include <iterator>
-#include <iostream>
 #include <cstring>
 #include <sstream>
 #include <new>
 
 // PysonValue destructor
 PysonValue::~PysonValue() noexcept {
-
-    std::cout << "PysonValue dtor called\n";
     
     switch (this->get_type()) {
         
         case PysonType::PysonInt:
         case PysonType::PysonFloat:
-            std::cout << "Was an int or float\n";
             return;
         
         case PysonType::PysonStr:
-            std::cout << "Was a string: " << std::flush;
-            std::cout << this->value.str_value << "\n";
             this->value.str_value.~basic_string();
-            std::cout << "Destructed string\n";
             return;
         
         case PysonType::PysonStrList:
-            std::cout << "Was a list: " << std::flush << this->value_as_string() << "\n";
             this->value.str_list_value.~vector();
-            std::cout << "Destructed list\n";
             return;
         
     }
@@ -95,7 +86,6 @@ PysonValue::PysonValue(PysonValue&& other) : value(0) {
 // PysonValue copy assignment
 PysonValue& PysonValue::operator= (const PysonValue& other) {
 
-    std::cout << "PysonValue copy assignment called\n";
     this->~PysonValue();
     
     switch (other.get_type()) {
@@ -123,7 +113,6 @@ PysonValue& PysonValue::operator= (const PysonValue& other) {
 // PysonValue move assignment
 PysonValue& PysonValue::operator= (PysonValue&& other) {
 
-    std::cout << "PysonValue move assignment called\n";
     this->~PysonValue();
     
     switch (other.get_type()) {
@@ -219,7 +208,6 @@ bool operator>> (std::istream& i, NamedPysonValue& v) {
     v.change_name(current_token);
 
     std::getline(i, current_token, ':');
-    std::cout << "type string is " << current_token << "\n";
     if (current_token == "int") { v.value.type = PysonType::PysonInt; }
     else if (current_token == "float") { v.value.type = PysonType::PysonFloat; }
     else if (current_token == "str") { v.value = PysonValue(""); }
@@ -227,7 +215,6 @@ bool operator>> (std::istream& i, NamedPysonValue& v) {
     else { return false; }
 
     std::getline(i, current_token);
-    std::cout << "current token is " << current_token << "\n";
     switch (v.value.get_type()) {
         case PysonType::PysonInt:
             try { v.value = PysonValue(std::stoi(current_token)); break; }
@@ -235,12 +222,7 @@ bool operator>> (std::istream& i, NamedPysonValue& v) {
         case PysonType::PysonFloat:
             try { v.value = PysonValue(std::stod(current_token)); break; }
             catch(...) { return false; }
-        case PysonType::PysonStr: {
-            std::cout << "Found a str\n";
-            v.value = PysonValue(current_token);
-            std::cout << "Value assigned: " << v.value.value_as_string() << "\n";
-            break;
-        }
+        case PysonType::PysonStr: v.value = PysonValue(current_token); break;
         case PysonType::PysonStrList: v.value = PysonValue::from_pyson_list(current_token); break;
     }
 
