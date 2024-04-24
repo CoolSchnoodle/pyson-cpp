@@ -24,13 +24,11 @@ enum class PysonType {
  * As a user of pyson, you will never need to know about or use this.
  */
 union PysonValueInner {
-
     friend class PysonValue;
         friend std::ostream& operator<< (std::ostream& o, const PysonValue& val);
     friend class NamedPysonValue;
 
 private:
-
     int int_value;
     double float_value;
     std::string str_value;
@@ -38,7 +36,6 @@ private:
 
     /// Users of pyson can't get a PysonValueInner, so the PysonValueInner constructors are private.
     /// Only a PysonValue can get one and their destructor takes care of destructing the correct way.
-
     PysonValueInner(int val) noexcept : int_value(val) {}
     PysonValueInner(double val) noexcept : float_value(val) {}
     PysonValueInner(const std::string& str) noexcept : str_value(str) {}
@@ -47,7 +44,6 @@ private:
     PysonValueInner(std::vector<std::string>&& list) noexcept : str_list_value(list) {}
 
     ~PysonValueInner() noexcept {}
-
 };
 
 /**
@@ -55,15 +51,12 @@ private:
  * Structurally, contains a PysonValueInner union and a PysonType tag.
  */
 class PysonValue {
-
     PysonType type;
     PysonValueInner value;
 
 public:
-
     friend class NamedPysonValue;
         friend bool operator>> (std::istream& i, NamedPysonValue& v);
-
     friend std::ostream& operator<< (std::ostream& o, const PysonValue& val);
 
     /// Get the type of the PysonValue as a PysonType
@@ -108,17 +101,14 @@ public:
 
     /// Destruct a PysonValue, including correctly destructing the PysonValueInner
     ~PysonValue() noexcept;
-
 };
 
 /// A PysonValue, but with a name
 class NamedPysonValue {
-    
     std::string name;
     PysonValue value;
 
 public:
-
     /// Print a NamedPysonValue in the pyson format
     friend std::ostream& operator<< (std::ostream& o, NamedPysonValue& v);
     /// Read in a NamedPysonValue using the pyson format
@@ -139,7 +129,6 @@ public:
     void change_name(const std::string& new_name) noexcept { this->name = new_name; }
     /// Swap out the value of a NamedPysonValue, keeping the name
     void change_value(const PysonValue& new_value) noexcept { this->value = new_value; }
-
 };
 
 #endif

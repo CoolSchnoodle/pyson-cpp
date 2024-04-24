@@ -16,10 +16,6 @@
 *.dylib
 *.dll
 
-# Fortran module files
-*.mod
-*.smod
-
 # Compiled Static libraries
 *.lai
 *.la
@@ -30,12 +26,3 @@
 *.exe
 *.out
 *.app
-
-# Other
-main
-main.cpp
-replit.nix
-.replit
-.ccls-cache/
-.breakpoints
-.ccls

@@ -6,9 +6,7 @@
 
 // PysonValue destructor
 PysonValue::~PysonValue() noexcept {
-    
     switch (this->get_type()) {
-        
         case PysonType::PysonInt:
         case PysonType::PysonFloat:
             return;
@@ -20,26 +18,18 @@ PysonValue::~PysonValue() noexcept {
         case PysonType::PysonStrList:
             this->value.str_list_value.~vector();
             return;
-        
     }
-    
 }
 
 // makes a PysonValue printable
 std::ostream& operator<< (std::ostream& o, const PysonValue& val) {
-    
-    o << val.get_type_cstring();
-    o << ':';
-    o << val.value_as_string();
-    
+    o << val.get_type_cstring() << ':' << val.value_as_string();
     return o;
 }
 
 // PysonValue copy constructor
 PysonValue::PysonValue(const PysonValue& other) : value(0) {
-
     switch (other.get_type()) {
-
         case PysonType::PysonInt:
         case PysonType::PysonFloat:
             std::memcpy(this, &other, sizeof(PysonValue));
@@ -54,17 +44,12 @@ PysonValue::PysonValue(const PysonValue& other) : value(0) {
             new(&this->value.str_list_value) std::vector<std::string>(other.value.str_list_value);
             this->type = PysonType::PysonStrList;
             return;
-
     }
-
 }
 // PysonValue move constructor
 PysonValue::PysonValue(PysonValue&& other) : value(0) {
-
     // (same code as copy constructor)
-
     switch (other.get_type()) {
-
         case PysonType::PysonInt:
         case PysonType::PysonFloat:
             std::memcpy(this, &other, sizeof(PysonValue));
@@ -79,17 +64,12 @@ PysonValue::PysonValue(PysonValue&& other) : value(0) {
             new(&this->value.str_list_value) std::vector<std::string>(std::move(other.value.str_list_value));
             this->type = PysonType::PysonStrList;
             break;
-
     }
-
 }
 // PysonValue copy assignment
 PysonValue& PysonValue::operator= (const PysonValue& other) {
-
     this->~PysonValue();
-    
     switch (other.get_type()) {
-
         case PysonType::PysonInt:
         case PysonType::PysonFloat:
             std::memcpy(this, &other, sizeof(PysonValue));
@@ -104,19 +84,13 @@ PysonValue& PysonValue::operator= (const PysonValue& other) {
             new(&this->value.str_list_value) std::vector<std::string>(other.value.str_list_value);
             this->type = PysonType::PysonStrList;
             break;
-
     }
-
     return *this;
-    
 }
 // PysonValue move assignment
 PysonValue& PysonValue::operator= (PysonValue&& other) {
-
     this->~PysonValue();
-    
     switch (other.get_type()) {
-
         case PysonType::PysonInt:
         case PysonType::PysonFloat:
             std::memcpy(this, &other, sizeof(PysonValue));
@@ -131,11 +105,8 @@ PysonValue& PysonValue::operator= (PysonValue&& other) {
             this->type = PysonType::PysonStrList;
             new(&this->value.str_list_value) std::vector<std::string>(std::move(other.value.str_list_value));
             break;
-
     }
-
     return *this;
-    
 }
 
 // Returns "int", "float", "str", or "list"
@@ -178,12 +149,7 @@ PysonValue PysonValue::from_pyson_list(std::string pyson_list) {
     for (char c : pyson_list) {
         current_token.push_back(c);
         size_t size = current_token.length();
-        if (
-            size > 3
-            && current_token[size-3] == '('
-            && current_token[size-2] == '*'
-            && current_token[size-1] == ')'
-        ){
+        if (size > 3 && current_token.substr(size-3, 3) == "(*)") {
             value.value.str_list_value.push_back(current_token.substr(0, size-3));
             current_token.clear();
         }
@@ -200,9 +166,7 @@ std::ostream& operator<< (std::ostream& o, NamedPysonValue& v) {
 
 // Read a pyson-formatted line into a NamedPysonValue
 bool operator>> (std::istream& i, NamedPysonValue& v) {
-    
     std::string current_token{};
-    
     std::getline(i, current_token, ':');
     for (char c : current_token) if (c == '\n') return false;
     v.change_name(current_token);
@@ -225,7 +189,5 @@ bool operator>> (std::istream& i, NamedPysonValue& v) {
         case PysonType::PysonStr: v.value = PysonValue(current_token); break;
         case PysonType::PysonStrList: v.value = PysonValue::from_pyson_list(current_token); break;
     }
-
     return true;
-    
 }
