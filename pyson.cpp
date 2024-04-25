@@ -4,7 +4,7 @@
 #include <sstream>
 #include <new>
 
-const char *WrongPysonTypeError::what() const noexcept {
+const char *WrongPysonType::what() const noexcept {
     switch (m_got) {
         case PysonType::PysonInt: switch (m_expected) {
             case PysonType::PysonInt: return nullptr; // unreachable

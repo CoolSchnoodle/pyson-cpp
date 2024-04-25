@@ -1,5 +1,5 @@
-#ifndef PYSON_CPP_PYSON_INCLUDED
-#define PYSON_CPP_PYSON_INCLUDED
+#ifndef PYSON_HPP_PYSON_INCLUDED
+#define PYSON_HPP_PYSON_INCLUDED
 
 #include <string>
 #include <vector>
@@ -22,11 +22,16 @@ enum class PysonType {
     PysonList,
 };
 
-class WrongPysonTypeError : public std::exception {
+/**
+ * An exception for when a specific pyson type was expected, but a different type was recieved.
+ * WrongPysonType inherits from std::exception, so you can catch it as a std::exception&
+ * just like most exceptions.
+ */
+class WrongPysonType : public std::exception {
     PysonType m_expected;
     PysonType m_got;
 public:
-    WrongPysonTypeError(PysonType expected, PysonType got) : m_expected(expected), m_got(got) {
+    WrongPysonType(PysonType expected, PysonType got) : m_expected(expected), m_got(got) {
         if (expected == got)
             throw std::logic_error("Tried to construct WrongPysonTypeError with same type expected and got");
     }
@@ -220,40 +225,40 @@ public:
         }
     }
 
-    /// Get the int from the PysonValue, or throw a WrongPysonTypeError if it isn't an int
+    /// Get the int from the PysonValue, or throw a WrongPysonType if it isn't an int
     int int_or_throw() const {
         PysonType found_type = type();
         constexpr PysonType expected_type = PysonType::PysonInt;
         switch (found_type) {
             case expected_type: return m_value.m_int;
-            default: throw WrongPysonTypeError(expected_type, found_type);
+            default: throw WrongPysonType(expected_type, found_type);
         }
     }
-    /// Get the 64-bit float from the PysonValue, or throw a WrongPysonTypeError if it isn't a float
+    /// Get the 64-bit float from the PysonValue, or throw a WrongPysonType if it isn't a float
     double float_or_throw() const {
         PysonType found_type = type();
         constexpr PysonType expected_type = PysonType::PysonFloat;
         switch (found_type) {
             case expected_type: return m_value.m_float;
-            default: throw WrongPysonTypeError(expected_type, found_type);
+            default: throw WrongPysonType(expected_type, found_type);
         }
     }
-    /// Get the string from the PysonValue, or throw a WrongPysonTypeError if it isn't a string
+    /// Get the string from the PysonValue, or throw a WrongPysonType if it isn't a string
     string string_or_throw() const {
         PysonType found_type = type();
         constexpr PysonType expected_type = PysonType::PysonStr;
         switch (found_type) {
             case expected_type: return m_value.m_str;
-            default: throw WrongPysonTypeError(expected_type, found_type);
+            default: throw WrongPysonType(expected_type, found_type);
         }
     }
-    /// Get the list from the PysonValue, or throw a WrongPysonTypeError if it isn't a list
+    /// Get the list from the PysonValue, or throw a WrongPysonType if it isn't a list
     vector<string> list_or_throw() const {
         PysonType found_type = type();
         constexpr PysonType expected_type = PysonType::PysonList;
         switch (found_type) {
             case expected_type: return m_value.m_list;
-            default: throw WrongPysonTypeError(expected_type, found_type);
+            default: throw WrongPysonType(expected_type, found_type);
         }
     }
 };
