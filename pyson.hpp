@@ -51,6 +51,10 @@ private:
  * Structurally, contains a PysonValueInner union and a PysonType tag.
  */
 class PysonValue {
+
+    template <typename T> using vector = std::vector<T>;
+    using string = std::string;
+
     PysonType m_type;
     PysonValueInner m_value;
 
@@ -64,7 +68,7 @@ public:
     /// Get the type of the PysonValue as a C string (const char *)
     const char *type_cstring() const noexcept;
     /// Get the type of the PysonValue as a C++ string (std::string)
-    std::string type_string() const noexcept { return this->type_cstring(); }
+    string type_string() const noexcept { return this->type_cstring(); }
 
     /// Returns whether the PysonValue is an integer
     bool is_int() const noexcept { return this->type() == PysonType::PysonInt; }
@@ -76,7 +80,7 @@ public:
     bool is_list() const noexcept { return this->type() == PysonType::PysonList; }
 
     // Returns the PysonValue's value as a string
-    std::string value_as_string() const noexcept;
+    string value_as_string() const noexcept;
 
     /// Construct a PysonValue from another PysonValue
     PysonValue(const PysonValue&);
@@ -86,21 +90,90 @@ public:
     PysonValue& operator= (PysonValue&&);
 
     /// Construct a PysonValue from a string formatted as a pyson list
-    static PysonValue from_pyson_list(std::string pyson_list);
+    static PysonValue from_pyson_list(string pyson_list);
 
     /// Construct a PysonValue from an integer
     explicit PysonValue(int val) : m_type(PysonType::PysonInt), m_value(val) {}
     /// Construct a PysonValue from a 64-bit floating-point number
     explicit PysonValue(double val) : m_type(PysonType::PysonFloat), m_value(val) {}
     /// Construct a PysonValue from a string
-    explicit PysonValue(const std::string& str) : m_type(PysonType::PysonStr), m_value(str) {}
-    explicit PysonValue(std::string&& str) : m_type(PysonType::PysonStr), m_value(str) {}
+    explicit PysonValue(const string& str) : m_type(PysonType::PysonStr), m_value(str) {}
+    explicit PysonValue(string&& str) : m_type(PysonType::PysonStr), m_value(str) {}
     /// Construct a PysonValue from a list of strings
-    explicit PysonValue(const std::vector<std::string>& list) : m_type(PysonType::PysonList), m_value(list) {}
-    explicit PysonValue(std::vector<std::string>&& list) : m_type(PysonType::PysonList), m_value(list) {}
+    explicit PysonValue(const vector<string>& list) : m_type(PysonType::PysonList), m_value(list) {}
+    explicit PysonValue(vector<string>&& list) : m_type(PysonType::PysonList), m_value(list) {}
 
     /// Destruct a PysonValue, including correctly destructing the PysonValueInner
     ~PysonValue() noexcept;
+
+    /**
+     * Get the int from the PysonValue, or a custom default value.
+     * All integers are valid in pyson, so the default value will also
+     * be returned if that was the actual value.
+     */
+    int int_or(int default_val) const noexcept {
+        switch (type()) {
+            case PysonType::PysonInt: return m_value.m_int;
+            default: return default_val;
+        }
+    }
+    /**
+     * Get the 64-bit float from the PysonValue, or a custom defualt value.
+     * All 64-bit floats are valid in pyson, so the default value will also
+     * be returned if that was the actual value.
+     */
+    double float_or(double default_val) const noexcept {
+        switch (type()) {
+            case PysonType::PysonFloat: return m_value.m_float;
+            default: return default_val;
+        }
+    }
+    /**
+     * Get the string from the PysonValue, or a custom default value.
+     * All strings that don't contain newlines are valid in pyson,
+     * so the default may be returned if it was the actual value
+     */
+    string string_or(string default_val) const noexcept {
+        switch (type()) {
+            case PysonType::PysonStr: return m_value.m_str;
+            default: return default_val;
+        }
+    }
+    /**
+     * Get the list from the PysonValue, or a custom default value.
+     * All strings without newlines are valid in pyson,
+     * so the default may be returned if it was the actual value.
+     */
+    vector<string> list_or(vector<string> default_val) const noexcept {
+        switch(type()) {
+            case PysonType::PysonList: return m_value.m_list;
+            default: return default_val;
+        }
+    }
+    /**
+     * Get the int from the PysonValue, or 0 if it was not an int
+     * Note: if this returns 0 that does not necessarily mean that it was not an int,
+     * 0 is a valid integer value in pyson
+     */
+    int int_or_zero() const noexcept { return int_or(0); }
+    /**
+     * Get the 64-bit float from the PysonValue, or 0.0 if it was not a float
+     * Note: if this returns 0.0 that does not necessarily mean it was not a float,
+     * 0.0 is a valid float value in pyson
+     */
+    double float_or_zero() const noexcept { return float_or(0.0); }
+    /**
+     * Get the string from the PysonValue, or an empty string if it was not a string
+     * Note: if this returns an empty string that does not necessarily mean it was not a string,
+     * empty strings are valid in pyson
+     */
+    string string_or_empty() const noexcept { return string_or(""); }
+    /**
+     * Get the list of strings from the PysonValue, or an empty list if the value was not a list.
+     * Note: if this returns and empty list that does not necessarily mean it was not a list,
+     * empty lists are valid in pyson.
+     */
+    vector<string> list_or_empty() const noexcept { return list_or(vector<string>{}); }
 };
 
 /// A PysonValue, but with a name
