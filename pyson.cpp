@@ -4,6 +4,35 @@
 #include <sstream>
 #include <new>
 
+const char *WrongPysonTypeError::what() const noexcept {
+    switch (m_got) {
+        case PysonType::PysonInt: switch (m_expected) {
+            case PysonType::PysonInt: return nullptr; // unreachable
+            case PysonType::PysonFloat: return "Wrong pyson type: expected int but got float";
+            case PysonType::PysonStr: return "Wrong pyson type: expected int but got str";
+            case PysonType::PysonList: return "Wrong pyson type: expected int but got list";
+        }
+        case PysonType::PysonFloat: switch (m_expected) {
+            case PysonType::PysonFloat: return nullptr; // unreachable
+            case PysonType::PysonInt: return "Wrong pyson type: expected float but got int";
+            case PysonType::PysonStr: return "Wrong pyson type: expected float but got str";
+            case PysonType::PysonList: return "Wrong pyson type: expected float but got list";
+        }
+        case PysonType::PysonStr: switch (m_expected) {
+            case PysonType::PysonStr: return nullptr; // unreachable
+            case PysonType::PysonInt: return "Wrong pyson type: expected str but got int";
+            case PysonType::PysonFloat: return "Wrong pyson type: expected str but got float";
+            case PysonType::PysonList: return "Wrong pyson type: expected str but got list";
+        }
+        case PysonType::PysonList: switch (m_expected) {
+            case PysonType::PysonList: return nullptr; // unreachable
+            case PysonType::PysonInt: return "Wrong pyson type: expected list but got int";
+            case PysonType::PysonFloat: return "Wrong pyson type: expected list but got float";
+            case PysonType::PysonStr: return "Wrong pyson type: expected list but got str";
+        }
+    }
+}
+
 // PysonValue destructor
 PysonValue::~PysonValue() noexcept {
     switch (type()) {

@@ -6,7 +6,7 @@
 #include <iosfwd>
 #include <optional>
 #include <cstring>
-#include <exception>
+#include <stdexcept>
 
 class PysonValue;
 class NamedPysonValue;
@@ -26,7 +26,10 @@ class WrongPysonTypeError : public std::exception {
     PysonType m_expected;
     PysonType m_got;
 public:
-    WrongPysonTypeError(PysonType expected, PysonType got) : m_expected(expected), m_got(got) {}
+    WrongPysonTypeError(PysonType expected, PysonType got) : m_expected(expected), m_got(got) {
+        if (expected == got)
+            throw std::logic_error("Tried to construct WrongPysonTypeError with same type expected and got");
+    }
     const char *what() const noexcept override;
 };
 
