@@ -4,6 +4,9 @@
 #include <string>
 #include <vector>
 #include <iosfwd>
+#include <optional>
+#include <cstring>
+#include <exception>
 
 class PysonValue;
 class NamedPysonValue;
@@ -17,6 +20,14 @@ enum class PysonType {
     PysonFloat,
     PysonStr,
     PysonList,
+};
+
+class WrongPysonTypeError : public std::exception {
+    PysonType m_expected;
+    PysonType m_got;
+public:
+    WrongPysonTypeError(PysonType expected, PysonType got) : m_expected(expected), m_got(got) {}
+    const char *what() const noexcept override;
 };
 
 /**
@@ -53,6 +64,7 @@ private:
 class PysonValue {
 
     template <typename T> using vector = std::vector<T>;
+    template <typename T> using optional = std::optional<T>;
     using string = std::string;
 
     PysonType m_type;
@@ -150,6 +162,7 @@ public:
             default: return default_val;
         }
     }
+
     /**
      * Get the int from the PysonValue, or 0 if it was not an int
      * Note: if this returns 0 that does not necessarily mean that it was not an int,
@@ -174,6 +187,72 @@ public:
      * empty lists are valid in pyson.
      */
     vector<string> list_or_empty() const noexcept { return list_or(vector<string>{}); }
+
+    /// Get the integer from the PysonValue, or a null option if the value isn't an integer
+    optional<int> get_int() const noexcept {
+        switch (type()) {
+            case PysonType::PysonInt: return m_value.m_int;
+            default: return std::nullopt;
+        }
+    }
+    /// Get the 64-bit float from the PysonValue, or a null option if the value isn't a float
+    optional<double> get_float() const noexcept {
+        switch(type()) {
+            case PysonType::PysonFloat: return m_value.m_float;
+            default: return std::nullopt;
+        }
+    }
+    /// Get the string from the PysonValue, or a null option if the value isn't a string
+    optional<string> get_string() const noexcept {
+        switch(type()) {
+            case PysonType::PysonStr: return m_value.m_str;
+            default: return std::nullopt;
+        }
+    }
+    /// Get the list from the PysonValue, or a null option if the value isn't a list
+    optional<vector<string>> get_list() const noexcept {
+        switch(type()) {
+            case PysonType::PysonList: return m_value.m_list;
+            default: return std::nullopt;
+        }
+    }
+
+    /// Get the int from the PysonValue, or throw a WrongPysonTypeError if it isn't an int
+    int int_or_throw() const {
+        PysonType found_type = type();
+        constexpr PysonType expected_type = PysonType::PysonInt;
+        switch (found_type) {
+            case expected_type: return m_value.m_int;
+            default: throw WrongPysonTypeError(expected_type, found_type);
+        }
+    }
+    /// Get the 64-bit float from the PysonValue, or throw a WrongPysonTypeError if it isn't a float
+    double float_or_throw() const {
+        PysonType found_type = type();
+        constexpr PysonType expected_type = PysonType::PysonFloat;
+        switch (found_type) {
+            case expected_type: return m_value.m_float;
+            default: throw WrongPysonTypeError(expected_type, found_type);
+        }
+    }
+    /// Get the string from the PysonValue, or throw a WrongPysonTypeError if it isn't a string
+    string string_or_throw() const {
+        PysonType found_type = type();
+        constexpr PysonType expected_type = PysonType::PysonStr;
+        switch (found_type) {
+            case expected_type: return m_value.m_str;
+            default: throw WrongPysonTypeError(expected_type, found_type);
+        }
+    }
+    /// Get the list from the PysonValue, or throw a WrongPysonTypeError if it isn't a list
+    vector<string> list_or_throw() const {
+        PysonType found_type = type();
+        constexpr PysonType expected_type = PysonType::PysonList;
+        switch (found_type) {
+            case expected_type: return m_value.m_list;
+            default: throw WrongPysonTypeError(expected_type, found_type);
+        }
+    }
 };
 
 /// A PysonValue, but with a name
