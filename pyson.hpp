@@ -33,7 +33,7 @@ class WrongPysonType : public std::exception {
 public:
     WrongPysonType(PysonType expected, PysonType got) : m_expected(expected), m_got(got) {
         if (expected == got)
-            throw std::logic_error("Tried to construct WrongPysonTypeError with same type expected and got");
+            throw std::logic_error("You can't have the wrong pyson type if you got what you expected");
     }
     const char *what() const noexcept override;
 };
@@ -261,6 +261,20 @@ public:
             default: throw WrongPysonType(expected_type, found_type);
         }
     }
+
+    /**
+     * Make the value become a string, no matter what it was previously.
+     * The string will be identical to the string returned by value_as_string().
+     */
+    void force_to_string() noexcept;
+    /**
+     * Make the value become a list of strings, no matter what it was previously.
+     * If the value is an integer or floating-point number, the list will have 1 element
+     * that is the string representation of that number.
+     * If the value is a string, it will be parsed as a pyson list.
+     * If the value is a list, it will remain unchanged.
+     */
+    void force_to_list() noexcept;
 };
 
 /// A PysonValue, but with a name
@@ -281,9 +295,9 @@ public:
     explicit NamedPysonValue(std::string&& name, PysonValue&& value) : m_name(name), m_value(value) {}
 
     /// Returns the name of the NamedPysonValue
-    std::string get_name() const noexcept { return m_name; }
+    std::string name() const noexcept { return m_name; }
     /// Returns the PysonValue contained by the NamedPysonValue
-    PysonValue get_value() const noexcept { return m_value; }
+    PysonValue value() const noexcept { return m_value; }
 
     /// Change the name of a NamedPysonValue
     void change_name(const std::string& new_name) noexcept { m_name = new_name; }

@@ -140,7 +140,7 @@ PysonValue& PysonValue::operator= (PysonValue&& other) {
 
 // Returns "int", "float", "str", or "list"
 const char *PysonValue::type_cstring() const noexcept {
-    switch (this->type()) {
+    switch (type()) {
         case PysonType::PysonInt: return "int";
         case PysonType::PysonFloat: return "float";
         case PysonType::PysonStr: return "str";
@@ -150,7 +150,7 @@ const char *PysonValue::type_cstring() const noexcept {
 
 // Turn the PysonValue's value into a pyson-formatted string
 std::string PysonValue::value_as_string() const noexcept {
-    switch (this->type()) {
+    switch (type()) {
         case PysonType::PysonInt: return std::to_string(m_value.m_int);
         case PysonType::PysonFloat: return std::to_string(m_value.m_float);
         case PysonType::PysonStr: return m_value.m_str;
@@ -185,6 +185,25 @@ PysonValue PysonValue::from_pyson_list(std::string pyson_list) {
     }
     result.m_value.m_list.push_back(current_token);
     return result;
+}
+
+void PysonValue::force_to_string() noexcept {
+    switch(type()) {
+        case PysonType::PysonStr: return;
+        default: *this = PysonValue(value_as_string());
+    }
+}
+
+void PysonValue::force_to_list() noexcept {
+    switch(type()) {
+        case PysonType::PysonList: return;
+        case PysonType::PysonStr:
+            *this = PysonValue::from_pyson_list(m_value.m_str);
+            return;
+        case PysonType::PysonInt:
+        case PysonType::PysonFloat:
+            *this = PysonValue(std::vector<std::string>{value_as_string()});
+    }
 }
 
 // Output a NamedPysonValue in the pyson format
