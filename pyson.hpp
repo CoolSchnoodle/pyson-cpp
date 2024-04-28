@@ -87,6 +87,8 @@ public:
         friend bool operator>> (std::istream& i, NamedPysonValue& v);
     friend std::ostream& operator<< (std::ostream& o, const PysonValue& val);
 
+    bool operator== (const PysonValue& other) const noexcept;
+
     /// Get the type of the PysonValue as a PysonType
     PysonType type() const noexcept { return m_type; }
     /// Get the type of the PysonValue as a C string (const char *)

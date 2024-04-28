@@ -50,6 +50,19 @@ PysonValue::~PysonValue() noexcept {
     }
 }
 
+// PysonValue equality operator
+bool PysonValue::operator== (const PysonValue& other) const noexcept {
+    if (m_type != other.m_type)
+        return false;
+    
+    switch (m_type) {
+        case PysonType::PysonInt: return m_value.m_int == other.m_value.m_int;
+        case PysonType::PysonFloat: return m_value.m_float == other.m_value.m_float;
+        case PysonType::PysonStr: return m_value.m_str == other.m_value.m_str;
+        case PysonType::PysonList: return m_value.m_list == other.m_value.m_list;
+    }
+}
+
 // makes a PysonValue printable
 std::ostream& operator<< (std::ostream& o, const PysonValue& val) {
     o << val.type_cstring() << ':' << val.value_as_string();
