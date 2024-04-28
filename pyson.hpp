@@ -7,9 +7,12 @@
 #include <optional>
 #include <cstring>
 #include <stdexcept>
+#include <array>
+#include <unordered_map>
 
 class PysonValue;
 class NamedPysonValue;
+class PysonFileReader;
 
 /**
  * An enum that says which type a PysonValue is.
@@ -79,6 +82,7 @@ class PysonValue {
     PysonValueInner m_value;
 
 public:
+    friend class PysonFileReader;
     friend class NamedPysonValue;
         friend bool operator>> (std::istream& i, NamedPysonValue& v);
     friend std::ostream& operator<< (std::ostream& o, const PysonValue& val);
@@ -283,6 +287,7 @@ class NamedPysonValue {
     PysonValue m_value;
 
 public:
+    friend class PysonFileReader;
     /// Print a NamedPysonValue in the pyson format
     friend std::ostream& operator<< (std::ostream& o, NamedPysonValue& v);
     /// Read in a NamedPysonValue using the pyson format
@@ -303,6 +308,31 @@ public:
     void change_name(const std::string& new_name) noexcept { m_name = new_name; }
     /// Swap out the value of a NamedPysonValue, keeping the name
     void change_value(const PysonValue& new_value) noexcept { m_value = new_value; }
+};
+
+class PysonFileReader {
+    FILE *m_handle;
+public:
+    PysonFileReader(const char *path) : m_handle(fopen(path, "r")) {
+        if (errno != 0) {
+            throw std::runtime_error(
+                "fopen() IO error code "
+                + std::to_string(errno)
+                + " in PysonFileReader::PysonFileReader(const char *path)"
+            );
+        }
+    }
+
+    /// Get the next NamedPysonValue from the file,
+    /// or the null option if the file ended
+    std::optional<NamedPysonValue> next() const;
+    /// Get the next NamedPysonValue from the file,
+    /// or a predetermined default NamedPysonValue if the file ended
+    NamedPysonValue next_or(const NamedPysonValue& default_value) const;
+    NamedPysonValue next_or(NamedPysonValue&& default_value) const;
+    /// Get the next NamedPysonValue from the file,
+    /// or throw an exception if the file ended
+    NamedPysonValue next_or_throw() const;
 };
 
 #endif
