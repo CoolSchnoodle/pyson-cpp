@@ -314,8 +314,18 @@ public:
 
 class PysonFileReader {
     FILE *m_handle;
+
 public:
     PysonFileReader(const char *path) : m_handle(fopen(path, "r")) {
+        if (errno != 0) {
+            throw std::runtime_error(
+                "fopen() IO error code "
+                + std::to_string(errno)
+                + " in PysonFileReader::PysonFileReader(const char *path)"
+            );
+        }
+    }
+    PysonFileReader(std::string path) : m_handle(fopen(path.c_str(), "r")) {
         if (errno != 0) {
             throw std::runtime_error(
                 "fopen() IO error code "
@@ -327,14 +337,44 @@ public:
 
     /// Get the next NamedPysonValue from the file,
     /// or the null option if the file ended
-    std::optional<NamedPysonValue> next() const;
+    std::optional<NamedPysonValue> next();
     /// Get the next NamedPysonValue from the file,
     /// or a predetermined default NamedPysonValue if the file ended
-    NamedPysonValue next_or(const NamedPysonValue& default_value) const;
-    NamedPysonValue next_or(NamedPysonValue&& default_value) const;
+    NamedPysonValue next_or(const NamedPysonValue& default_value);
+    NamedPysonValue next_or(NamedPysonValue&& default_value);
     /// Get the next NamedPysonValue from the file,
     /// or throw an exception if the file ended
-    NamedPysonValue next_or_throw() const;
+    NamedPysonValue next_or_throw();
+
+    /**
+     * Get a vector that contains each NamedPysonValue from the file.
+     * This call will read the entire file,
+     * not just the portion after the current read position.
+     */
+    std::vector<NamedPysonValue> all();
+
+    /// Get a hashmap of each name to its PysonValue from the file.
+    /// This call will read the entire file,
+    /// not just the portion after the current read position.
+    std::unordered_map<std::string, PysonValue> as_hashmap();
+
+    /// Reset read progress to the beginning of the file
+    void go_to_beginning();
+
+    /// Go to a specific line in the file, start reading from that line
+    void go_to_line(size_t line);
+
+    /// Skip the next N lines
+    void skip_n_lines(size_t amount_to_skip);
+
+    /**
+     * Locate the PysonValue with a specific name from the file.
+     * The value will be found if it exists anywhere in the file,
+     * even before the current read location.
+     * The next PysonValue read by next() will be the one after the value found.
+     */
+    std::optional<PysonValue> value_with_name(const char *name);
+    std::optional<PysonValue> value_with_name(std::string name) { return value_with_name(name.c_str()); }
 };
 
 #endif
