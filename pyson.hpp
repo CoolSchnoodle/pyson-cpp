@@ -1,13 +1,21 @@
 #ifndef PYSON_HPP_PYSON_INCLUDED
 #define PYSON_HPP_PYSON_INCLUDED
 
+// OS check
+#if defined(__unix__)
+#define POSIX_FUNCTIONS_AVAILABLE 1
+#elif defined(__APPLE__)
+#define POSIX_FUNCTIONS_AVAILABLE 1
+#else
+#define POSIX_FUNCTIONS_AVAILABLE 0
+#endif
+
 #include <string>
 #include <vector>
 #include <iosfwd>
 #include <optional>
 #include <cstring>
 #include <stdexcept>
-#include <array>
 #include <unordered_map>
 
 class PysonValue;
@@ -313,27 +321,16 @@ public:
 };
 
 class PysonFileReader {
+
+#if POSIX_FUNCTIONS_AVAILABLE
     FILE *m_handle;
+#else
+    std::ifstream m_stream;
+#endif
 
 public:
-    PysonFileReader(const char *path) : m_handle(fopen(path, "r")) {
-        if (errno != 0) {
-            throw std::runtime_error(
-                "fopen() IO error code "
-                + std::to_string(errno)
-                + " in PysonFileReader::PysonFileReader(const char *path)"
-            );
-        }
-    }
-    PysonFileReader(std::string path) : m_handle(fopen(path.c_str(), "r")) {
-        if (errno != 0) {
-            throw std::runtime_error(
-                "fopen() IO error code "
-                + std::to_string(errno)
-                + " in PysonFileReader::PysonFileReader(const char *path)"
-            );
-        }
-    }
+    PysonFileReader(const char *path);
+    PysonFileReader(const std::string& path);
 
     /// Get the next NamedPysonValue from the file,
     /// or the null option if the file ended

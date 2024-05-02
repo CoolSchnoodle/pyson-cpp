@@ -4,6 +4,12 @@
 #include <sstream>
 #include <new>
 
+#if POSIX_FUNCTIONS_AVAILABLE
+
+#else
+#include <fstream>
+#endif
+
 const char *WrongPysonType::what() const noexcept {
     switch (m_got) {
         case PysonType::PysonInt: switch (m_expected) {
@@ -252,3 +258,41 @@ bool operator>> (std::istream& i, NamedPysonValue& v) {
     }
     return true;
 }
+
+#if POSIX_FUNCTIONS_AVAILABLE
+PysonFileReader::PysonFileReader(const char *path) : m_handle(fopen(path, "r")) {
+    if (errno != 0) {
+        throw std::runtime_error(
+            "fopen() IO error code "
+            + std::to_string(errno)
+            + " in PysonFileReader::PysonFileReader(const char *path)"
+        );
+    }
+}
+PysonFileReader::PysonFileReader(const std::string& path) : m_handle(fopen(path.c_str(), "r")) {
+    if (errno != 0) {
+        throw std::runtime_error(
+            "fopen() IO error code "
+            + std::to_string(errno)
+            + " in PysonFileReader::PysonFileReader(const std::string& path)"
+        );
+    }
+}
+#else
+PysonFileReader::PysonFileReader(const char *path) : m_stream(ifstream(path)) {
+    m_stream.open();
+    if (!m_stream.good()) {
+        throw std::runtime_error(
+            "Error opening file in PysonFileReader::PysonFileReader(const char *path)"
+        )
+    }
+}
+PysonFileReader::PysonFileReader(const std::string& path) : m_stream(ifstream(path.c_str())) {
+    m_stream.open();
+    if (!m_stream.good()) {
+        throw std::runtime_error(
+            "Error opening file in PysonFileReader::PysonFileReader(const std::string& path)"
+        )
+    }
+}
+#endif
