@@ -332,15 +332,21 @@ public:
     PysonFileReader(const char *path);
     PysonFileReader(const std::string& path);
 
-    /// Get the next NamedPysonValue from the file,
-    /// or the null option if the file ended
+    /** 
+     * Get the next NamedPysonValue from the file,
+     * or the null option if either the file ended.
+     * Throws an exception if the NamedPysonValue is invalid.
+     */
     std::optional<NamedPysonValue> next();
-    /// Get the next NamedPysonValue from the file,
-    /// or a predetermined default NamedPysonValue if the file ended
+    /**
+     * Get the next NamedPysonValue from the file,
+     * or a predetermined default NamedPysonValue if the file ended.
+     * Throws an exception if the NamedPysonValue is invalid.
+     */
     NamedPysonValue next_or(const NamedPysonValue& default_value);
     NamedPysonValue next_or(NamedPysonValue&& default_value);
     /// Get the next NamedPysonValue from the file,
-    /// or throw an exception if the file ended
+    /// or throw an exception if the file ended or the NamedPysonValue is invalid
     NamedPysonValue next_or_throw();
 
     /**

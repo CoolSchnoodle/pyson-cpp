@@ -5,7 +5,7 @@
 #include <new>
 
 #if POSIX_FUNCTIONS_AVAILABLE
-
+#include <stdio.h>
 #else
 #include <fstream>
 #endif
@@ -278,6 +278,51 @@ PysonFileReader::PysonFileReader(const std::string& path) : m_handle(fopen(path.
         );
     }
 }
+
+std::optional<NamedPysonValue> PysonFileReader::next() {
+    char *line = nullptr;
+    ssize_t len = getline(&line, nullptr, m_handle);
+    if (len == -1) return std::nullopt;
+    
+    
+    std::istringstream str(std::string(line, len));
+    NamedPysonValue result("", PysonValue(0));
+    
+    if (str >> result) return result;
+    else throw std::runtime_error("Invalid pyson value encountered in PysonFileReader::next()");
+}
+NamedPysonValue PysonFileReader::next_or(const NamedPysonValue& default_val) {
+    char *line = nullptr;
+    ssize_t len = getline(&line, nullptr, m_handle);
+    if (len == -1) return default_val;
+
+    std::istringstream str(std::string(line, len));
+    NamedPysonValue result("", PysonValue(0));
+    if (str >> result) return result;
+    else throw std::runtime_error("Invalid pyson value encountered in PysonFileReader::next_or()");
+}
+NamedPysonValue PysonFileReader::next_or(NamedPysonValue&& default_val) {
+    char *line = nullptr;
+    ssize_t len = getline(&line, nullptr, m_handle);
+    if (len == -1) return default_val;
+
+    std::istringstream str(std::string(line, len));
+    NamedPysonValue result("", PysonValue(0));
+    if (str >> result) return result;
+    else throw std::runtime_error("Invalid pyson value encountered in PysonFileReader::next_or()");
+}
+NamedPysonValue PysonFileReader::next_or_throw() {
+    char *line = nullptr;
+    ssize_t len = getline(&line, nullptr, m_handle);
+    if (len == -1)
+        throw std::runtime_error("EOF encountered in PysonFileReader::next_or()");
+
+    std::istringstream str(std::string(line, len));
+    NamedPysonValue result("", PysonValue(0));
+    if (str >> result) return result;
+    else throw std::runtime_error("Invalid pyson value encountered in PysonFileReader::next_or_throw()");
+}
+
 #else
 PysonFileReader::PysonFileReader(const char *path) : m_stream(ifstream(path)) {
     m_stream.open();
