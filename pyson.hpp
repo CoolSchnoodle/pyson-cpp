@@ -365,7 +365,8 @@ public:
     void go_to_beginning();
 
     /// Go to a specific line in the file, start reading from that line
-    void go_to_line(size_t line);
+    /// Throws an exception if EOF is encountered before that line
+    void go_to_line(size_t line_number);
 
     /// Skip the next N lines
     void skip_n_lines(size_t amount_to_skip);
