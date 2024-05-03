@@ -358,7 +358,28 @@ std::vector<NamedPysonValue> PysonFileReader::all() {
     return values;
 }
 
-#else
+std::optional<PysonValue> PysonFileReader::value_with_name(const char *name) {
+    go_to_beginning();
+    for (std::optional<NamedPysonValue> current = next(); current.has_value(); current = next()) {
+        if (current.value().name() == name)
+            return current.value().value();
+    }
+    return std::nullopt;
+}
+
+std::unordered_map<std::string, PysonValue> PysonFileReader::as_hashmap() {
+    go_to_beginning();
+    std::unordered_map<std::string, PysonValue> map;
+    for (std::optional<NamedPysonValue> current = next(); current.has_value(); current = next()) {
+        NamedPysonValue& cref = current.value();
+        if (map.contains(cref.name()))
+            throw std::runtime_error("Duplicate name encountered in PysonFileReader::as_hashmap()");
+        map.insert(std::make_pair(cref.name(), cref.value()));
+    }
+    return map;
+}
+
+#else // windows
 PysonFileReader::PysonFileReader(const char *path) : m_stream(ifstream(path)) {
     m_stream.open();
     if (!m_stream.good()) {

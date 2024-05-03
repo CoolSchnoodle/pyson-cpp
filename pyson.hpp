@@ -378,7 +378,7 @@ public:
      * The next PysonValue read by next() will be the one after the value found.
      */
     std::optional<PysonValue> value_with_name(const char *name);
-    std::optional<PysonValue> value_with_name(std::string name) { return value_with_name(name.c_str()); }
+    std::optional<PysonValue> value_with_name(const std::string& name) { return value_with_name(name.c_str()); }
 };
 
 #endif
