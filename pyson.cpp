@@ -333,6 +333,14 @@ void PysonFileReader::go_to_line(size_t line_number) {
         throw std::runtime_error("File ended before requested line in PysonFileReader::go_to_line()");
     }
 }
+void PysonFileReader::skip_n_lines(size_t amount_to_skip) {
+    char *line = nullptr;
+    size_t len = 0;
+    for (size_t i = 0; i < amount_to_skip; i++) {
+        if (-1 != getline(&line, &len, m_handle)) continue;
+        throw std::runtime_error("File ended before requested line in PysonFileReader::skip_n_lines()");
+    }
+}
 
 std::vector<NamedPysonValue> PysonFileReader::all() {
     go_to_beginning();
