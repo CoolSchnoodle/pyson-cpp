@@ -304,7 +304,7 @@ NamedPysonValue PysonFileReader::next_or(const NamedPysonValue& default_val) {
 NamedPysonValue PysonFileReader::next_or(NamedPysonValue&& default_val) {
     char *line = nullptr;
     ssize_t len = getline(&line, nullptr, m_handle);
-    if (len == -1) return default_val;
+    if (len == -1) return std::move(default_val);
 
     std::istringstream str(std::string(line, len));
     NamedPysonValue result("", PysonValue(0));
@@ -380,20 +380,20 @@ std::unordered_map<std::string, PysonValue> PysonFileReader::as_hashmap() {
 }
 
 #else // windows
-PysonFileReader::PysonFileReader(const char *path) : m_stream(ifstream(path)) {
+PysonFileReader::PysonFileReader(const char *path) : m_stream(std::ifstream(path)) {
     m_stream.open();
     if (!m_stream.good()) {
         throw std::runtime_error(
             "Error opening file in PysonFileReader::PysonFileReader(const char *path)"
-        )
+        );
     }
 }
-PysonFileReader::PysonFileReader(const std::string& path) : m_stream(ifstream(path.c_str())) {
+PysonFileReader::PysonFileReader(const std::string& path) : m_stream(std::ifstream(path.c_str())) {
     m_stream.open();
     if (!m_stream.good()) {
         throw std::runtime_error(
             "Error opening file in PysonFileReader::PysonFileReader(const std::string& path)"
-        )
+        );
     }
 }
 #endif
