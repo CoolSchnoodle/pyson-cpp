@@ -12,11 +12,17 @@
 
 #include <string>
 #include <vector>
-#include <fstream>
+#include <iosfwd>
 #include <optional>
 #include <cstring>
 #include <stdexcept>
 #include <unordered_map>
+
+#if POSIX_FUNCTIONS_AVAILABLE
+#include <stdio.h>
+#else
+#include <fstream>
+#endif
 
 class PysonValue;
 class NamedPysonValue;

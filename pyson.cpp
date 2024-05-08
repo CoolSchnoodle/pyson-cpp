@@ -5,12 +5,6 @@
 #include <new>
 #include <limits>
 
-#if POSIX_FUNCTIONS_AVAILABLE
-#include <stdio.h>
-#else
-#include <fstream>
-#endif
-
 const char *WrongPysonType::what() const noexcept {
     switch (m_got) {
         case PysonType::PysonInt: switch (m_expected) {
