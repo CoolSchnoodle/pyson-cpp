@@ -18,7 +18,10 @@ I have no idea whether it will work on literally any platform, so just do whatev
 any other C++ library you need to install from source (no idea how people normally do that).
 <br>
 ## Where is the documentation?
-What documentation?
+Currently, the documentation is the code comments. Sorry.
+The one piece of advice that I *can* give you that is not in the code is that
+it is completely fine to pass around a PysonFileReader on unix since it is quite small,
+but on Windows it can be upwards of half a kilobyte, so try not to copy it.
 <br>
 ## Questions? Doesn't work on your platform? Other issues?
 Open a Github issue.
