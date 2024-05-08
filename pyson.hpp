@@ -2,6 +2,7 @@
 #define PYSON_HPP_PYSON_INCLUDED
 
 // OS check
+/*
 #if defined(__unix__)
 #define POSIX_FUNCTIONS_AVAILABLE 1
 #elif defined(__APPLE__)
@@ -9,6 +10,7 @@
 #else
 #define POSIX_FUNCTIONS_AVAILABLE 0
 #endif
+*/
 
 #include <string>
 #include <vector>

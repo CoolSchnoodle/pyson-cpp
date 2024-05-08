@@ -417,4 +417,35 @@ NamedPysonValue PysonFileReader::next_or_throw() {
     if (m_stream >> v) return v;
     else throw std::runtime_error("Invalid pyson value encountered in PysonFileReader::next_or_throw");
 }
+
+void PysonFileReader::go_to_beginning() {
+    m_stream.clear();
+    m_stream.seekg(0);
+}
+void PysonFileReader::go_to_line(size_t line_number) {
+    go_to_beginning();
+    for (size_t i = 0; i < line_number; i++) {
+        if (m_stream.eof())
+            throw std::runtime_error("File ended before requested line in PysonFileReader::go_to_line()");
+        std::getline(m_stream);
+    }
+}
+void PysonFileReader::skip_n_lines(size_t amount_to_skip) {
+    for (size_t i = 0; i < amount_to_skip; i++) {
+        if (m_stream.eof())
+            throw std::runtime_error("File ended before skipping enough lines in PysonFileReader::skip_n_lines");
+        std::getline(m_stream);
+    }
+}
+
+std::vector<NamedPysonValue> PysonFileReader::all() {
+    go_to_beginning();
+    std::vector<NamedPysonValue> values{};
+    NamedPysonValue next("", PysonValue(0));
+    while (m_stream >> next)
+        values.push_back(next);
+
+    if (m_stream.eof()) return values;
+    else throw std::runtime_error("Invalid pyson value encountered in PysonFileReader::all()");
+}
 #endif
