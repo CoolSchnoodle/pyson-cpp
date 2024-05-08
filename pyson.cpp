@@ -3,6 +3,7 @@
 #include <cstring>
 #include <sstream>
 #include <new>
+#include <limits>
 
 #if POSIX_FUNCTIONS_AVAILABLE
 #include <stdio.h>
@@ -359,16 +360,16 @@ std::vector<NamedPysonValue> PysonFileReader::all() {
 }
 
 #else // windows
-PysonFileReader::PysonFileReader(const char *path) : m_stream(std::ifstream(path)) {
-    m_stream.open();
+PysonFileReader::PysonFileReader(const char *path) : m_stream() {
+    m_stream.open(path);
     if (!m_stream.good()) {
         throw std::runtime_error(
             "Error opening file in PysonFileReader::PysonFileReader(const char *path)"
         );
     }
 }
-PysonFileReader::PysonFileReader(const std::string& path) : m_stream(std::ifstream(path.c_str())) {
-    m_stream.open();
+PysonFileReader::PysonFileReader(const std::string& path) : m_stream() {
+    m_stream.open(path.c_str());
     if (!m_stream.good()) {
         throw std::runtime_error(
             "Error opening file in PysonFileReader::PysonFileReader(const std::string& path)"
@@ -389,7 +390,7 @@ NamedPysonValue PysonFileReader::next_or(const NamedPysonValue& default_value) {
 NamedPysonValue PysonFileReader::next_or(NamedPysonValue&& default_value) {
     NamedPysonValue v("", PysonValue(0));
     if (m_stream >> v) return v;
-    else return default_value;
+    else return std::move(default_value);
 }
 NamedPysonValue PysonFileReader::next_or_throw() {
     NamedPysonValue v("", PysonValue(0));
@@ -406,14 +407,14 @@ void PysonFileReader::go_to_line(size_t line_number) {
     for (size_t i = 0; i < line_number; i++) {
         if (m_stream.eof())
             throw std::runtime_error("File ended before requested line in PysonFileReader::go_to_line()");
-        std::getline(m_stream);
+        m_stream.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     }
 }
 void PysonFileReader::skip_n_lines(size_t amount_to_skip) {
     for (size_t i = 0; i < amount_to_skip; i++) {
         if (m_stream.eof())
             throw std::runtime_error("File ended before skipping enough lines in PysonFileReader::skip_n_lines");
-        std::getline(m_stream);
+        m_stream.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     }
 }
 

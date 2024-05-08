@@ -12,7 +12,7 @@
 
 #include <string>
 #include <vector>
-#include <iosfwd>
+#include <fstream>
 #include <optional>
 #include <cstring>
 #include <stdexcept>
