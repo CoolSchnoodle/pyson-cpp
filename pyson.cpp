@@ -396,4 +396,25 @@ PysonFileReader::PysonFileReader(const std::string& path) : m_stream(std::ifstre
         );
     }
 }
+
+std::optional<NamedPysonValue> PysonFileReader::next() {
+    NamedPysonValue v("", PysonValue(0));
+    if (m_stream >> v) return v;
+    else return std::nullopt;
+}
+NamedPysonValue PysonFileReader::next_or(const NamedPysonValue& default_value) {
+    NamedPysonValue v("", PysonValue(0));
+    if (m_stream >> v) return v;
+    else return default_value;
+}
+NamedPysonValue PysonFileReader::next_or(NamedPysonValue&& default_value) {
+    NamedPysonValue v("", PysonValue(0));
+    if (m_stream >> v) return v;
+    else return default_value;
+}
+NamedPysonValue PysonFileReader::next_or_throw() {
+    NamedPysonValue v("", PysonValue(0));
+    if (m_stream >> v) return v;
+    else throw std::runtime_error("Invalid pyson value encountered in PysonFileReader::next_or_throw");
+}
 #endif
