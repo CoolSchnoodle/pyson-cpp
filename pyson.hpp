@@ -17,6 +17,7 @@
 #include <cstring>
 #include <stdexcept>
 #include <unordered_map>
+#include <functional>
 
 #if POSIX_FUNCTIONS_AVAILABLE
 #include <stdio.h>
@@ -362,9 +363,11 @@ public:
      */
     std::vector<NamedPysonValue> all();
 
-    /// Get a hashmap of each name to its PysonValue from the file.
-    /// This call will read the entire file,
-    /// not just the portion after the current read position.
+    /**
+     * Get a hashmap of each name to its PysonValue from the file.
+     * This call will read the entire file,
+     * not just the portion after the current read position.
+     */
     std::unordered_map<std::string, PysonValue> as_hashmap();
 
     /// Reset read progress to the beginning of the file
@@ -385,6 +388,19 @@ public:
      */
     std::optional<PysonValue> value_with_name(const char *name);
     std::optional<PysonValue> value_with_name(const std::string& name) { return value_with_name(name.c_str()); }
+
+    /**
+     * Execute a function for each NamedPysonValue left in the file.
+     * This function will not rewind to the beginning of the file.
+     */
+    void for_each(std::function<void(NamedPysonValue)> func);
+
+    /**
+     * Map each NamedPysonValue, and then get all of the results.
+     * This function will not rewind to the beginning of the file.
+     */
+    template <class Return>
+    std::vector<Return> map_each(std::function<Return(NamedPysonValue)> func);
 };
 
 #endif
