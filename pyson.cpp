@@ -461,3 +461,25 @@ void PysonFileReader::for_each_while(std::function<bool (NamedPysonValue)> predi
     for (auto v = next(); v != std::nullopt && predicate(v.value()); v = next())
         ; // no loop body
 }
+
+template <class Return>
+std::vector<Return> PysonFileReader::map_while(std::function<std::pair<bool, Return> (NamedPysonValue)> predicate) {
+    auto vec = std::vector<Return>{};
+    for (auto val = next(); val != std::nullopt; val = next()) {
+        auto res = predicate(val);
+        if (!res.first) return vec;
+        else vec.push_back(res.second);
+    }
+    return vec;
+}
+
+template <class Return>
+std::vector<Return> PysonFileReader::map_while(std::function<std::optional<Return> (NamedPysonValue)> predicate) {
+    auto vec = std::vector<Return>{};
+    for (auto val = next(); val != std::nullopt; val = next()) {
+        auto res = predicate(val);
+        if (!res.has_value()) return vec;
+        else vec.push_back(res.value());
+    }
+    return vec;
+}

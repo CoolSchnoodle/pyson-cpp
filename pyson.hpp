@@ -407,6 +407,21 @@ public:
      * This function will not rewind to the beginning of the file.
      */
     void for_each_while(std::function<bool(NamedPysonValue)> predicate);
+
+    /**
+     * Map each NamedPysonValue while the function returns true and some Return value.
+     * Note: the last Return value will not be included in the result.
+     * This function will not rewind to the beginning of the file.
+     */
+    template <class Return>
+    std::vector<Return> map_while(std::function<std::pair<bool, Return>(NamedPysonValue)> predicate);
+
+    /**
+     * Map each NamedPysonValue while the function doesn't return std::nullopt.
+     * This function will not rewind to the beginning of the file.
+     */
+    template <class Return>
+    std::vector<Return> map_while(std::function<std::optional<Return>(NamedPysonValue)> predicate);
 };
 
 #endif
