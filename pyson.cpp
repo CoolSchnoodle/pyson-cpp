@@ -444,15 +444,20 @@ std::optional<PysonValue> PysonFileReader::value_with_name(const char *name) {
     return std::nullopt;
 }
 
-void PysonFileReader::for_each(std::function<void (NamedPysonValue)> func) {
+void PysonFileReader::for_each(std::function<void (NamedPysonValue)> predicate) {
     for (auto v = next(); v != std::nullopt; v = next())
-        func(v.value());
+        predicate(v.value());
 }
 
 template <class Return>
-std::vector<Return> PysonFileReader::map_each(std::function<Return (NamedPysonValue)> func) {
+std::vector<Return> PysonFileReader::map_each(std::function<Return (NamedPysonValue)> predicate) {
     auto vec = std::vector<Return>{};
     for (auto v = next(); v != std::nullopt; v = next())
-        vec.push_back(func(v));
+        vec.push_back(predicate(v));
     return vec;
+}
+
+void PysonFileReader::for_each_while(std::function<bool (NamedPysonValue)> predicate) {
+    for (auto v = next(); v != std::nullopt && predicate(v.value()); v = next())
+        ; // no loop body
 }

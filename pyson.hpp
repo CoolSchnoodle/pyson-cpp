@@ -393,14 +393,20 @@ public:
      * Execute a function for each NamedPysonValue left in the file.
      * This function will not rewind to the beginning of the file.
      */
-    void for_each(std::function<void(NamedPysonValue)> func);
+    void for_each(std::function<void(NamedPysonValue)> predicate);
 
     /**
      * Map each NamedPysonValue, and then get all of the results.
      * This function will not rewind to the beginning of the file.
      */
     template <class Return>
-    std::vector<Return> map_each(std::function<Return(NamedPysonValue)> func);
+    std::vector<Return> map_each(std::function<Return(NamedPysonValue)> predicate);
+
+    /**
+     * Call a function for each NamedPysonValue left in the file while the function returns true.
+     * This function will not rewind to the beginning of the file.
+     */
+    void for_each_while(std::function<bool(NamedPysonValue)> predicate);
 };
 
 #endif
