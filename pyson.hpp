@@ -25,12 +25,14 @@
 #include <fstream>
 #endif
 
-class PysonValue;
-class NamedPysonValue;
-class PysonFileReader;
+namespace pyson {
+
+class Value;
+class NamedValue;
+class FileReader;
 
 /**
- * An enum that says which type a PysonValue is.
+ * An enum that says which type a Value is.
  * Values in pyson can either be integers, 64-bit floating point numbers, strings, or lists of strings.
  */
 enum class PysonType {
@@ -57,13 +59,13 @@ public:
 };
 
 /**
- * The union within a PysonValue that contains either an integer, 64-bit float, string, or list of strings.
+ * The union within a Value that contains either an integer, 64-bit float, string, or list of strings.
  * As a user of pyson, you will never need to know about or use this.
  */
-union PysonValueInner {
-    friend class PysonValue;
-        friend std::ostream& operator<< (std::ostream& o, const PysonValue& val);
-    friend class NamedPysonValue;
+union ValueInner {
+    friend class Value;
+        friend std::ostream& operator<< (std::ostream& o, const Value& val);
+    friend class NamedValue;
 
 private:
     int m_int;
@@ -71,84 +73,84 @@ private:
     std::string m_str;
     std::vector<std::string> m_list;
 
-    /// Users of pyson can't get a PysonValueInner, so the PysonValueInner constructors are private.
-    /// Only a PysonValue can get one and their destructor takes care of destructing the correct way.
-    PysonValueInner(int val) noexcept : m_int(val) {}
-    PysonValueInner(double val) noexcept : m_float(val) {}
-    PysonValueInner(const std::string& str) noexcept : m_str(str) {}
-    PysonValueInner(std::string&& str) noexcept : m_str(str) {}
-    PysonValueInner(const std::vector<std::string>& list) noexcept : m_list(list) {}
-    PysonValueInner(std::vector<std::string>&& list) noexcept : m_list(list) {}
+    /// Users of pyson can't get a ValueInner, so the ValueInner constructors are private.
+    /// Only a Value can get one and their destructor takes care of destructing the correct way.
+    ValueInner(int val) noexcept : m_int(val) {}
+    ValueInner(double val) noexcept : m_float(val) {}
+    ValueInner(const std::string& str) noexcept : m_str(str) {}
+    ValueInner(std::string&& str) noexcept : m_str(str) {}
+    ValueInner(const std::vector<std::string>& list) noexcept : m_list(list) {}
+    ValueInner(std::vector<std::string>&& list) noexcept : m_list(list) {}
 
-    ~PysonValueInner() noexcept {}
+    ~ValueInner() noexcept {}
 };
 
 /**
  * A value from a pyson file.
- * Structurally, contains a PysonValueInner union and a PysonType tag.
+ * Structurally, contains a ValueInner union and a PysonType tag.
  */
-class PysonValue {
+class Value {
 
     template <typename T> using vector = std::vector<T>;
     template <typename T> using optional = std::optional<T>;
     using string = std::string;
 
     PysonType m_type;
-    PysonValueInner m_value;
+    ValueInner m_value;
 
 public:
-    friend class PysonFileReader;
-    friend class NamedPysonValue;
-        friend bool operator>> (std::istream& i, NamedPysonValue& v);
-    friend std::ostream& operator<< (std::ostream& o, const PysonValue& val);
+    friend class FileReader;
+    friend class NamedValue;
+        friend bool operator>> (std::istream& i, NamedValue& v);
+    friend std::ostream& operator<< (std::ostream& o, const Value& val);
 
-    bool operator== (const PysonValue& other) const noexcept;
+    bool operator== (const Value& other) const noexcept;
 
-    /// Get the type of the PysonValue as a PysonType
+    /// Get the type of the Value as a PysonType
     PysonType type() const noexcept { return m_type; }
-    /// Get the type of the PysonValue as a C string (const char *)
+    /// Get the type of the Value as a C string (const char *)
     const char *type_cstring() const noexcept;
-    /// Get the type of the PysonValue as a C++ string (std::string)
+    /// Get the type of the Value as a C++ string (std::string)
     string type_string() const noexcept { return this->type_cstring(); }
 
-    /// Returns whether the PysonValue is an integer
+    /// Returns whether the Value is an integer
     bool is_int() const noexcept { return this->type() == PysonType::PysonInt; }
-    /// Returns whether the PysonValue is a floating-point number
+    /// Returns whether the Value is a floating-point number
     bool is_float() const noexcept { return this->type() == PysonType::PysonFloat; }
-    /// Returns whether the PysonValue is a string
+    /// Returns whether the Value is a string
     bool is_str() const noexcept { return this->type() == PysonType::PysonStr; }
-    /// Returns whether the PysonValue is a list of strings
+    /// Returns whether the Value is a list of strings
     bool is_list() const noexcept { return this->type() == PysonType::PysonList; }
 
-    // Returns the PysonValue's value as a string
+    // Returns the Value's value as a string
     string value_as_string() const noexcept;
 
-    /// Construct a PysonValue from another PysonValue
-    PysonValue(const PysonValue&);
-    PysonValue(PysonValue&&);
-    /// Assign a PysonValue to the value of another PysonValue
-    PysonValue& operator= (const PysonValue&);
-    PysonValue& operator= (PysonValue&&);
+    /// Construct a Value from another Value
+    Value(const Value&);
+    Value(Value&&);
+    /// Assign a Value to the value of another Value
+    Value& operator= (const Value&);
+    Value& operator= (Value&&);
 
-    /// Construct a PysonValue from a string formatted as a pyson list
-    static PysonValue from_pyson_list(string pyson_list);
+    /// Construct a Value from a string formatted as a pyson list
+    static Value from_pyson_list(string pyson_list);
 
-    /// Construct a PysonValue from an integer
-    explicit PysonValue(int val) : m_type(PysonType::PysonInt), m_value(val) {}
-    /// Construct a PysonValue from a 64-bit floating-point number
-    explicit PysonValue(double val) : m_type(PysonType::PysonFloat), m_value(val) {}
-    /// Construct a PysonValue from a string
-    explicit PysonValue(const string& str) : m_type(PysonType::PysonStr), m_value(str) {}
-    explicit PysonValue(string&& str) : m_type(PysonType::PysonStr), m_value(str) {}
-    /// Construct a PysonValue from a list of strings
-    explicit PysonValue(const vector<string>& list) : m_type(PysonType::PysonList), m_value(list) {}
-    explicit PysonValue(vector<string>&& list) : m_type(PysonType::PysonList), m_value(list) {}
+    /// Construct a Value from an integer
+    explicit Value(int val) : m_type(PysonType::PysonInt), m_value(val) {}
+    /// Construct a Value from a 64-bit floating-point number
+    explicit Value(double val) : m_type(PysonType::PysonFloat), m_value(val) {}
+    /// Construct a Value from a string
+    explicit Value(const string& str) : m_type(PysonType::PysonStr), m_value(str) {}
+    explicit Value(string&& str) : m_type(PysonType::PysonStr), m_value(str) {}
+    /// Construct a Value from a list of strings
+    explicit Value(const vector<string>& list) : m_type(PysonType::PysonList), m_value(list) {}
+    explicit Value(vector<string>&& list) : m_type(PysonType::PysonList), m_value(list) {}
 
-    /// Destruct a PysonValue, including correctly destructing the PysonValueInner
-    ~PysonValue() noexcept;
+    /// Destruct a Value, including correctly destructing the ValueInner
+    ~Value() noexcept;
 
     /**
-     * Get the int from the PysonValue, or a custom default value.
+     * Get the int from the Value, or a custom default value.
      * All integers are valid in pyson, so the default value will also
      * be returned if that was the actual value.
      */
@@ -159,7 +161,7 @@ public:
         }
     }
     /**
-     * Get the 64-bit float from the PysonValue, or a custom defualt value.
+     * Get the 64-bit float from the Value, or a custom defualt value.
      * All 64-bit floats are valid in pyson, so the default value will also
      * be returned if that was the actual value.
      */
@@ -170,7 +172,7 @@ public:
         }
     }
     /**
-     * Get the string from the PysonValue, or a custom default value.
+     * Get the string from the Value, or a custom default value.
      * All strings that don't contain newlines are valid in pyson,
      * so the default may be returned if it was the actual value
      */
@@ -181,7 +183,7 @@ public:
         }
     }
     /**
-     * Get the list from the PysonValue, or a custom default value.
+     * Get the list from the Value, or a custom default value.
      * All strings without newlines are valid in pyson,
      * so the default may be returned if it was the actual value.
      */
@@ -193,52 +195,52 @@ public:
     }
 
     /**
-     * Get the int from the PysonValue, or 0 if it was not an int
+     * Get the int from the Value, or 0 if it was not an int
      * Note: if this returns 0 that does not necessarily mean that it was not an int,
      * 0 is a valid integer value in pyson
      */
     int int_or_zero() const noexcept { return int_or(0); }
     /**
-     * Get the 64-bit float from the PysonValue, or 0.0 if it was not a float
+     * Get the 64-bit float from the Value, or 0.0 if it was not a float
      * Note: if this returns 0.0 that does not necessarily mean it was not a float,
      * 0.0 is a valid float value in pyson
      */
     double float_or_zero() const noexcept { return float_or(0.0); }
     /**
-     * Get the string from the PysonValue, or an empty string if it was not a string
+     * Get the string from the Value, or an empty string if it was not a string
      * Note: if this returns an empty string that does not necessarily mean it was not a string,
      * empty strings are valid in pyson
      */
     string string_or_empty() const noexcept { return string_or(""); }
     /**
-     * Get the list of strings from the PysonValue, or an empty list if the value was not a list.
+     * Get the list of strings from the Value, or an empty list if the value was not a list.
      * Note: if this returns and empty list that does not necessarily mean it was not a list,
      * empty lists are valid in pyson.
      */
     vector<string> list_or_empty() const noexcept { return list_or(vector<string>{}); }
 
-    /// Get the integer from the PysonValue, or a null option if the value isn't an integer
+    /// Get the integer from the Value, or a null option if the value isn't an integer
     optional<int> get_int() const noexcept {
         switch (type()) {
             case PysonType::PysonInt: return m_value.m_int;
             default: return std::nullopt;
         }
     }
-    /// Get the 64-bit float from the PysonValue, or a null option if the value isn't a float
+    /// Get the 64-bit float from the Value, or a null option if the value isn't a float
     optional<double> get_float() const noexcept {
         switch(type()) {
             case PysonType::PysonFloat: return m_value.m_float;
             default: return std::nullopt;
         }
     }
-    /// Get the string from the PysonValue, or a null option if the value isn't a string
+    /// Get the string from the Value, or a null option if the value isn't a string
     optional<string> get_string() const noexcept {
         switch(type()) {
             case PysonType::PysonStr: return m_value.m_str;
             default: return std::nullopt;
         }
     }
-    /// Get the list from the PysonValue, or a null option if the value isn't a list
+    /// Get the list from the Value, or a null option if the value isn't a list
     optional<vector<string>> get_list() const noexcept {
         switch(type()) {
             case PysonType::PysonList: return m_value.m_list;
@@ -246,7 +248,7 @@ public:
         }
     }
 
-    /// Get the int from the PysonValue, or throw a WrongPysonType if it isn't an int
+    /// Get the int from the Value, or throw a WrongPysonType if it isn't an int
     int int_or_throw() const {
         PysonType found_type = type();
         constexpr PysonType expected_type = PysonType::PysonInt;
@@ -255,7 +257,7 @@ public:
             default: throw WrongPysonType(expected_type, found_type);
         }
     }
-    /// Get the 64-bit float from the PysonValue, or throw a WrongPysonType if it isn't a float
+    /// Get the 64-bit float from the Value, or throw a WrongPysonType if it isn't a float
     double float_or_throw() const {
         PysonType found_type = type();
         constexpr PysonType expected_type = PysonType::PysonFloat;
@@ -264,7 +266,7 @@ public:
             default: throw WrongPysonType(expected_type, found_type);
         }
     }
-    /// Get the string from the PysonValue, or throw a WrongPysonType if it isn't a string
+    /// Get the string from the Value, or throw a WrongPysonType if it isn't a string
     string string_or_throw() const {
         PysonType found_type = type();
         constexpr PysonType expected_type = PysonType::PysonStr;
@@ -273,7 +275,7 @@ public:
             default: throw WrongPysonType(expected_type, found_type);
         }
     }
-    /// Get the list from the PysonValue, or throw a WrongPysonType if it isn't a list
+    /// Get the list from the Value, or throw a WrongPysonType if it isn't a list
     vector<string> list_or_throw() const {
         PysonType found_type = type();
         constexpr PysonType expected_type = PysonType::PysonList;
@@ -298,36 +300,36 @@ public:
     void force_to_list() noexcept;
 };
 
-/// A PysonValue, but with a name
-class NamedPysonValue {
+/// A Value, but with a name
+class NamedValue {
     std::string m_name;
-    PysonValue m_value;
+    Value m_value;
 
 public:
-    friend class PysonFileReader;
-    /// Print a NamedPysonValue in the pyson format
-    friend std::ostream& operator<< (std::ostream& o, NamedPysonValue& v);
-    /// Read in a NamedPysonValue using the pyson format
-    friend bool operator>> (std::istream& i, NamedPysonValue& v);
+    friend class FileReader;
+    /// Print a NamedValue in the pyson format
+    friend std::ostream& operator<< (std::ostream& o, NamedValue& v);
+    /// Read in a NamedValue using the pyson format
+    friend bool operator>> (std::istream& i, NamedValue& v);
 
-    /// Construct a NamedPysonValue from a name and a PysonValue
-    explicit NamedPysonValue(const std::string& name, const PysonValue& value) : m_name(name), m_value(value) {}
-    explicit NamedPysonValue(const std::string& name, PysonValue&& value) : m_name(name), m_value(value) {}
-    explicit NamedPysonValue(std::string&& name, const PysonValue& value) : m_name(name), m_value(value) {}
-    explicit NamedPysonValue(std::string&& name, PysonValue&& value) : m_name(name), m_value(value) {}
+    /// Construct a NamedValue from a name and a Value
+    explicit NamedValue(const std::string& name, const Value& value) : m_name(name), m_value(value) {}
+    explicit NamedValue(const std::string& name, Value&& value) : m_name(name), m_value(value) {}
+    explicit NamedValue(std::string&& name, const Value& value) : m_name(name), m_value(value) {}
+    explicit NamedValue(std::string&& name, Value&& value) : m_name(name), m_value(value) {}
 
-    /// Returns the name of the NamedPysonValue
+    /// Returns the name of the NamedValue
     std::string name() const noexcept { return m_name; }
-    /// Returns the PysonValue contained by the NamedPysonValue
-    PysonValue value() const noexcept { return m_value; }
+    /// Returns the Value contained by the NamedValue
+    Value value() const noexcept { return m_value; }
 
-    /// Change the name of a NamedPysonValue
+    /// Change the name of a NamedValue
     void change_name(const std::string& new_name) noexcept { m_name = new_name; }
-    /// Swap out the value of a NamedPysonValue, keeping the name
-    void change_value(const PysonValue& new_value) noexcept { m_value = new_value; }
+    /// Swap out the value of a NamedValue, keeping the name
+    void change_value(const Value& new_value) noexcept { m_value = new_value; }
 };
 
-class PysonFileReader {
+class FileReader {
 
 #if POSIX_FUNCTIONS_AVAILABLE
     FILE *m_handle;
@@ -336,39 +338,39 @@ class PysonFileReader {
 #endif
 
 public:
-    PysonFileReader(const char *path);
-    PysonFileReader(const std::string& path);
+    FileReader(const char *path);
+    FileReader(const std::string& path);
 
     /** 
-     * Get the next NamedPysonValue from the file,
+     * Get the next NamedValue from the file,
      * or the null option if either the file ended.
-     * Throws an exception if the NamedPysonValue is invalid.
+     * Throws an exception if the NamedValue is invalid.
      */
-    std::optional<NamedPysonValue> next();
+    std::optional<NamedValue> next();
     /**
-     * Get the next NamedPysonValue from the file,
-     * or a predetermined default NamedPysonValue if the file ended.
-     * Throws an exception if the NamedPysonValue is invalid.
+     * Get the next NamedValue from the file,
+     * or a predetermined default NamedValue if the file ended.
+     * Throws an exception if the NamedValue is invalid.
      */
-    NamedPysonValue next_or(const NamedPysonValue& default_value);
-    NamedPysonValue next_or(NamedPysonValue&& default_value);
-    /// Get the next NamedPysonValue from the file,
-    /// or throw an exception if the file ended or the NamedPysonValue is invalid
-    NamedPysonValue next_or_throw();
+    NamedValue next_or(const NamedValue& default_value);
+    NamedValue next_or(NamedValue&& default_value);
+    /// Get the next NamedValue from the file,
+    /// or throw an exception if the file ended or the NamedValue is invalid
+    NamedValue next_or_throw();
 
     /**
-     * Get a vector that contains each NamedPysonValue from the file.
+     * Get a vector that contains each NamedValue from the file.
      * This call will read the entire file,
      * not just the portion after the current read position.
      */
-    std::vector<NamedPysonValue> all();
+    std::vector<NamedValue> all();
 
     /**
-     * Get a hashmap of each name to its PysonValue from the file.
+     * Get a hashmap of each name to its Value from the file.
      * This call will read the entire file,
      * not just the portion after the current read position.
      */
-    std::unordered_map<std::string, PysonValue> as_hashmap();
+    std::unordered_map<std::string, Value> as_hashmap();
 
     /// Reset read progress to the beginning of the file
     void go_to_beginning();
@@ -381,47 +383,49 @@ public:
     void skip_n_lines(size_t amount_to_skip);
 
     /**
-     * Locate the PysonValue with a specific name from the file.
+     * Locate the Value with a specific name from the file.
      * The value will be found if it exists anywhere in the file,
      * even before the current read location.
-     * The next PysonValue read by next() will be the one after the value found.
+     * The next Value read by next() will be the one after the value found.
      */
-    std::optional<PysonValue> value_with_name(const char *name);
-    std::optional<PysonValue> value_with_name(const std::string& name) { return value_with_name(name.c_str()); }
+    std::optional<Value> value_with_name(const char *name);
+    std::optional<Value> value_with_name(const std::string& name) { return value_with_name(name.c_str()); }
 
     /**
-     * Execute a function for each NamedPysonValue left in the file.
+     * Execute a function for each NamedValue left in the file.
      * This function will not rewind to the beginning of the file.
      */
-    void for_each(std::function<void(NamedPysonValue)> predicate);
+    void for_each(std::function<void(NamedValue)> predicate);
 
     /**
-     * Map each NamedPysonValue, and then get all of the results.
+     * Map each NamedValue, and then get all of the results.
      * This function will not rewind to the beginning of the file.
      */
     template <class Return>
-    std::vector<Return> map_each(std::function<Return(NamedPysonValue)> predicate);
+    std::vector<Return> map_each(std::function<Return(NamedValue)> predicate);
 
     /**
-     * Call a function for each NamedPysonValue left in the file while the function returns true.
+     * Call a function for each NamedValue left in the file while the function returns true.
      * This function will not rewind to the beginning of the file.
      */
-    void for_each_while(std::function<bool(NamedPysonValue)> predicate);
+    void for_each_while(std::function<bool(NamedValue)> predicate);
 
     /**
-     * Map each NamedPysonValue while the function returns true and some Return value.
+     * Map each NamedValue while the function returns true and some Return value.
      * Note: the last Return value will not be included in the result.
      * This function will not rewind to the beginning of the file.
      */
     template <class Return>
-    std::vector<Return> map_while(std::function<std::pair<bool, Return>(NamedPysonValue)> predicate);
+    std::vector<Return> map_while(std::function<std::pair<bool, Return>(NamedValue)> predicate);
 
     /**
-     * Map each NamedPysonValue while the function doesn't return std::nullopt.
+     * Map each NamedValue while the function doesn't return std::nullopt.
      * This function will not rewind to the beginning of the file.
      */
     template <class Return>
-    std::vector<Return> map_while(std::function<std::optional<Return>(NamedPysonValue)> predicate);
+    std::vector<Return> map_while(std::function<std::optional<Return>(NamedValue)> predicate);
 };
+
+}
 
 #endif

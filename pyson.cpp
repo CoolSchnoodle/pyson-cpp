@@ -5,6 +5,8 @@
 #include <new>
 #include <limits>
 
+namespace pyson {
+
 const char *WrongPysonType::what() const noexcept {
     switch (m_got) {
         case PysonType::PysonInt: switch (m_expected) {
@@ -34,8 +36,8 @@ const char *WrongPysonType::what() const noexcept {
     }
 }
 
-// PysonValue destructor
-PysonValue::~PysonValue() noexcept {
+// Value destructor
+Value::~Value() noexcept {
     switch (type()) {
         case PysonType::PysonInt:
         case PysonType::PysonFloat:
@@ -51,8 +53,8 @@ PysonValue::~PysonValue() noexcept {
     }
 }
 
-// PysonValue equality operator
-bool PysonValue::operator== (const PysonValue& other) const noexcept {
+// Value equality operator
+bool Value::operator== (const Value& other) const noexcept {
     if (m_type != other.m_type)
         return false;
     
@@ -64,18 +66,18 @@ bool PysonValue::operator== (const PysonValue& other) const noexcept {
     }
 }
 
-// makes a PysonValue printable
-std::ostream& operator<< (std::ostream& o, const PysonValue& val) {
+// makes a Value printable
+std::ostream& operator<< (std::ostream& o, const Value& val) {
     o << val.type_cstring() << ':' << val.value_as_string();
     return o;
 }
 
-// PysonValue copy constructor
-PysonValue::PysonValue(const PysonValue& other) : m_value(0) {
+// Value copy constructor
+Value::Value(const Value& other) : m_value(0) {
     switch (other.type()) {
         case PysonType::PysonInt:
         case PysonType::PysonFloat:
-            std::memcpy(this, &other, sizeof(PysonValue));
+            std::memcpy(this, &other, sizeof(Value));
             return;
 
         case PysonType::PysonStr:
@@ -89,13 +91,13 @@ PysonValue::PysonValue(const PysonValue& other) : m_value(0) {
             return;
     }
 }
-// PysonValue move constructor
-PysonValue::PysonValue(PysonValue&& other) : m_value(0) {
+// Value move constructor
+Value::Value(Value&& other) : m_value(0) {
     // (same code as copy constructor)
     switch (other.type()) {
         case PysonType::PysonInt:
         case PysonType::PysonFloat:
-            std::memcpy(this, &other, sizeof(PysonValue));
+            std::memcpy(this, &other, sizeof(Value));
             break;
 
         case PysonType::PysonStr:
@@ -109,13 +111,13 @@ PysonValue::PysonValue(PysonValue&& other) : m_value(0) {
             break;
     }
 }
-// PysonValue copy assignment
-PysonValue& PysonValue::operator= (const PysonValue& other) {
-    this->~PysonValue();
+// Value copy assignment
+Value& Value::operator= (const Value& other) {
+    this->~Value();
     switch (other.type()) {
         case PysonType::PysonInt:
         case PysonType::PysonFloat:
-            std::memcpy(this, &other, sizeof(PysonValue));
+            std::memcpy(this, &other, sizeof(Value));
             break;
 
         case PysonType::PysonStr:
@@ -130,13 +132,13 @@ PysonValue& PysonValue::operator= (const PysonValue& other) {
     }
     return *this;
 }
-// PysonValue move assignment
-PysonValue& PysonValue::operator= (PysonValue&& other) {
-    this->~PysonValue();
+// Value move assignment
+Value& Value::operator= (Value&& other) {
+    this->~Value();
     switch (other.type()) {
         case PysonType::PysonInt:
         case PysonType::PysonFloat:
-            std::memcpy(this, &other, sizeof(PysonValue));
+            std::memcpy(this, &other, sizeof(Value));
             break;
 
         case PysonType::PysonStr:
@@ -153,7 +155,7 @@ PysonValue& PysonValue::operator= (PysonValue&& other) {
 }
 
 // Returns "int", "float", "str", or "list"
-const char *PysonValue::type_cstring() const noexcept {
+const char *Value::type_cstring() const noexcept {
     switch (type()) {
         case PysonType::PysonInt: return "int";
         case PysonType::PysonFloat: return "float";
@@ -162,8 +164,8 @@ const char *PysonValue::type_cstring() const noexcept {
     }
 }
 
-// Turn the PysonValue's value into a pyson-formatted string
-std::string PysonValue::value_as_string() const noexcept {
+// Turn the Value's value into a pyson-formatted string
+std::string Value::value_as_string() const noexcept {
     switch (type()) {
         case PysonType::PysonInt: return std::to_string(m_value.m_int);
         case PysonType::PysonFloat: return std::to_string(m_value.m_float);
@@ -185,9 +187,9 @@ std::string PysonValue::value_as_string() const noexcept {
     }
 }
 
-// Create a PysonValue from a list in the pyson format
-PysonValue PysonValue::from_pyson_list(std::string pyson_list) {
-    PysonValue result(std::vector<std::string>{});
+// Create a Value from a list in the pyson format
+Value Value::from_pyson_list(std::string pyson_list) {
+    Value result(std::vector<std::string>{});
     std::string current_token{};
     for (char c : pyson_list) {
         current_token.push_back(c);
@@ -201,33 +203,33 @@ PysonValue PysonValue::from_pyson_list(std::string pyson_list) {
     return result;
 }
 
-void PysonValue::force_to_string() noexcept {
+void Value::force_to_string() noexcept {
     switch(type()) {
         case PysonType::PysonStr: return;
-        default: *this = PysonValue(value_as_string());
+        default: *this = Value(value_as_string());
     }
 }
 
-void PysonValue::force_to_list() noexcept {
+void Value::force_to_list() noexcept {
     switch(type()) {
         case PysonType::PysonList: return;
         case PysonType::PysonStr:
-            *this = PysonValue::from_pyson_list(m_value.m_str);
+            *this = Value::from_pyson_list(m_value.m_str);
             return;
         case PysonType::PysonInt:
         case PysonType::PysonFloat:
-            *this = PysonValue(std::vector<std::string>{value_as_string()});
+            *this = Value(std::vector<std::string>{value_as_string()});
     }
 }
 
-// Output a NamedPysonValue in the pyson format
-std::ostream& operator<< (std::ostream& o, NamedPysonValue& v) {
+// Output a NamedValue in the pyson format
+std::ostream& operator<< (std::ostream& o, NamedValue& v) {
     o << v.m_name << ':' << v.m_value;
     return o;
 }
 
-// Read a pyson-formatted line into a NamedPysonValue
-bool operator>> (std::istream& i, NamedPysonValue& v) {
+// Read a pyson-formatted line into a NamedValue
+bool operator>> (std::istream& i, NamedValue& v) {
     std::string current_token{};
     std::getline(i, current_token, ':');
     for (char c : current_token) if (c == '\n') return false;
@@ -236,234 +238,234 @@ bool operator>> (std::istream& i, NamedPysonValue& v) {
     std::getline(i, current_token, ':');
     if (current_token == "int") { v.m_value.m_type = PysonType::PysonInt; }
     else if (current_token == "float") { v.m_value.m_type = PysonType::PysonFloat; }
-    else if (current_token == "str") { v.m_value = PysonValue(""); }
-    else if (current_token == "list") { v.m_value = PysonValue(std::vector<std::string>{}); }
+    else if (current_token == "str") { v.m_value = Value(""); }
+    else if (current_token == "list") { v.m_value = Value(std::vector<std::string>{}); }
     else { return false; }
 
     std::getline(i, current_token);
     switch (v.m_value.type()) {
         case PysonType::PysonInt:
-            try { v.m_value = PysonValue(std::stoi(current_token)); break; }
+            try { v.m_value = Value(std::stoi(current_token)); break; }
             catch (...) { return false; }
         case PysonType::PysonFloat:
-            try { v.m_value = PysonValue(std::stod(current_token)); break; }
+            try { v.m_value = Value(std::stod(current_token)); break; }
             catch(...) { return false; }
-        case PysonType::PysonStr: v.m_value = PysonValue(current_token); break;
-        case PysonType::PysonList: v.m_value = PysonValue::from_pyson_list(current_token); break;
+        case PysonType::PysonStr: v.m_value = Value(current_token); break;
+        case PysonType::PysonList: v.m_value = Value::from_pyson_list(current_token); break;
     }
     return true;
 }
 
 #if POSIX_FUNCTIONS_AVAILABLE
-PysonFileReader::PysonFileReader(const char *path) : m_handle(fopen(path, "r")) {
+FileReader::FileReader(const char *path) : m_handle(fopen(path, "r")) {
     if (errno != 0) {
         throw std::runtime_error(
             "fopen() IO error code "
             + std::to_string(errno)
-            + " in PysonFileReader::PysonFileReader(const char *path)"
+            + " in FileReader::FileReader(const char *path)"
         );
     }
 }
-PysonFileReader::PysonFileReader(const std::string& path) : m_handle(fopen(path.c_str(), "r")) {
+FileReader::FileReader(const std::string& path) : m_handle(fopen(path.c_str(), "r")) {
     if (errno != 0) {
         throw std::runtime_error(
             "fopen() IO error code "
             + std::to_string(errno)
-            + " in PysonFileReader::PysonFileReader(const std::string& path)"
+            + " in FileReader::FileReader(const std::string& path)"
         );
     }
 }
 
-std::optional<NamedPysonValue> PysonFileReader::next() {
+std::optional<NamedValue> FileReader::next() {
     char *line = nullptr;
     ssize_t len = getline(&line, nullptr, m_handle);
     if (len == -1) return std::nullopt;
     
     
     std::istringstream str(std::string(line, len));
-    NamedPysonValue result("", PysonValue(0));
+    NamedValue result("", Value(0));
     
     if (str >> result) return result;
-    else throw std::runtime_error("Invalid pyson value encountered in PysonFileReader::next()");
+    else throw std::runtime_error("Invalid pyson value encountered in FileReader::next()");
 }
-NamedPysonValue PysonFileReader::next_or(const NamedPysonValue& default_val) {
+NamedValue FileReader::next_or(const NamedValue& default_val) {
     char *line = nullptr;
     ssize_t len = getline(&line, nullptr, m_handle);
     if (len == -1) return default_val;
 
     std::istringstream str(std::string(line, len));
-    NamedPysonValue result("", PysonValue(0));
+    NamedValue result("", Value(0));
     if (str >> result) return result;
-    else throw std::runtime_error("Invalid pyson value encountered in PysonFileReader::next_or()");
+    else throw std::runtime_error("Invalid pyson value encountered in FileReader::next_or()");
 }
-NamedPysonValue PysonFileReader::next_or(NamedPysonValue&& default_val) {
+NamedValue FileReader::next_or(NamedValue&& default_val) {
     char *line = nullptr;
     ssize_t len = getline(&line, nullptr, m_handle);
     if (len == -1) return std::move(default_val);
 
     std::istringstream str(std::string(line, len));
-    NamedPysonValue result("", PysonValue(0));
+    NamedValue result("", Value(0));
     if (str >> result) return result;
-    else throw std::runtime_error("Invalid pyson value encountered in PysonFileReader::next_or()");
+    else throw std::runtime_error("Invalid pyson value encountered in FileReader::next_or()");
 }
-NamedPysonValue PysonFileReader::next_or_throw() {
+NamedValue FileReader::next_or_throw() {
     char *line = nullptr;
     ssize_t len = getline(&line, nullptr, m_handle);
     if (len == -1)
-        throw std::runtime_error("EOF encountered in PysonFileReader::next_or()");
+        throw std::runtime_error("EOF encountered in FileReader::next_or()");
 
     std::istringstream str(std::string(line, len));
-    NamedPysonValue result("", PysonValue(0));
+    NamedValue result("", Value(0));
     if (str >> result) return result;
-    else throw std::runtime_error("Invalid pyson value encountered in PysonFileReader::next_or_throw()");
+    else throw std::runtime_error("Invalid pyson value encountered in FileReader::next_or_throw()");
 }
 
-void PysonFileReader::go_to_beginning() { rewind(m_handle); }
-void PysonFileReader::go_to_line(size_t line_number) {
+void FileReader::go_to_beginning() { rewind(m_handle); }
+void FileReader::go_to_line(size_t line_number) {
     go_to_beginning();
     char *line = nullptr;
     size_t len = 0;
     for (size_t i = 0; i < line_number; i++) {
         if (-1 != getline(&line, &len, m_handle)) continue;
-        throw std::runtime_error("File ended before requested line in PysonFileReader::go_to_line()");
+        throw std::runtime_error("File ended before requested line in FileReader::go_to_line()");
     }
 }
-void PysonFileReader::skip_n_lines(size_t amount_to_skip) {
+void FileReader::skip_n_lines(size_t amount_to_skip) {
     char *line = nullptr;
     size_t len = 0;
     for (size_t i = 0; i < amount_to_skip; i++) {
         if (-1 != getline(&line, &len, m_handle)) continue;
-        throw std::runtime_error("File ended before requested line in PysonFileReader::skip_n_lines()");
+        throw std::runtime_error("File ended before requested line in FileReader::skip_n_lines()");
     }
 }
 
-std::vector<NamedPysonValue> PysonFileReader::all() {
+std::vector<NamedValue> FileReader::all() {
     go_to_beginning();
     char *line = nullptr;
     size_t len = 0;
-    std::vector<NamedPysonValue> values{};
-    NamedPysonValue next("", PysonValue(0));
+    std::vector<NamedValue> values{};
+    NamedValue next("", Value(0));
     
     while (-1 != getline(&line, &len, m_handle)) {
         std::istringstream str(std::string(line, len));
         if (str >> next) values.push_back(next);
-        else throw std::runtime_error("Invalid pyson value encountered in PysonFileReader::all()");
+        else throw std::runtime_error("Invalid pyson value encountered in FileReader::all()");
     }
 
     return values;
 }
 
 #else // windows
-PysonFileReader::PysonFileReader(const char *path) : m_stream() {
+FileReader::FileReader(const char *path) : m_stream() {
     m_stream.open(path);
     if (!m_stream.good()) {
         throw std::runtime_error(
-            "Error opening file in PysonFileReader::PysonFileReader(const char *path)"
+            "Error opening file in FileReader::FileReader(const char *path)"
         );
     }
 }
-PysonFileReader::PysonFileReader(const std::string& path) : m_stream() {
+FileReader::FileReader(const std::string& path) : m_stream() {
     m_stream.open(path.c_str());
     if (!m_stream.good()) {
         throw std::runtime_error(
-            "Error opening file in PysonFileReader::PysonFileReader(const std::string& path)"
+            "Error opening file in FileReader::FileReader(const std::string& path)"
         );
     }
 }
 
-std::optional<NamedPysonValue> PysonFileReader::next() {
-    NamedPysonValue v("", PysonValue(0));
+std::optional<NamedValue> FileReader::next() {
+    NamedValue v("", Value(0));
     if (m_stream >> v) return v;
     else return std::nullopt;
 }
-NamedPysonValue PysonFileReader::next_or(const NamedPysonValue& default_value) {
-    NamedPysonValue v("", PysonValue(0));
+NamedValue FileReader::next_or(const NamedValue& default_value) {
+    NamedValue v("", Value(0));
     if (m_stream >> v) return v;
     else return default_value;
 }
-NamedPysonValue PysonFileReader::next_or(NamedPysonValue&& default_value) {
-    NamedPysonValue v("", PysonValue(0));
+NamedValue FileReader::next_or(NamedValue&& default_value) {
+    NamedValue v("", Value(0));
     if (m_stream >> v) return v;
     else return std::move(default_value);
 }
-NamedPysonValue PysonFileReader::next_or_throw() {
-    NamedPysonValue v("", PysonValue(0));
+NamedValue FileReader::next_or_throw() {
+    NamedValue v("", Value(0));
     if (m_stream >> v) return v;
-    else throw std::runtime_error("Invalid pyson value encountered in PysonFileReader::next_or_throw");
+    else throw std::runtime_error("Invalid pyson value encountered in FileReader::next_or_throw");
 }
 
-void PysonFileReader::go_to_beginning() {
+void FileReader::go_to_beginning() {
     m_stream.clear();
     m_stream.seekg(0);
 }
-void PysonFileReader::go_to_line(size_t line_number) {
+void FileReader::go_to_line(size_t line_number) {
     go_to_beginning();
     for (size_t i = 0; i < line_number; i++) {
         if (m_stream.eof())
-            throw std::runtime_error("File ended before requested line in PysonFileReader::go_to_line()");
+            throw std::runtime_error("File ended before requested line in FileReader::go_to_line()");
         m_stream.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     }
 }
-void PysonFileReader::skip_n_lines(size_t amount_to_skip) {
+void FileReader::skip_n_lines(size_t amount_to_skip) {
     for (size_t i = 0; i < amount_to_skip; i++) {
         if (m_stream.eof())
-            throw std::runtime_error("File ended before skipping enough lines in PysonFileReader::skip_n_lines");
+            throw std::runtime_error("File ended before skipping enough lines in FileReader::skip_n_lines");
         m_stream.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     }
 }
 
-std::vector<NamedPysonValue> PysonFileReader::all() {
+std::vector<NamedValue> FileReader::all() {
     go_to_beginning();
-    std::vector<NamedPysonValue> values{};
-    NamedPysonValue next("", PysonValue(0));
+    std::vector<NamedValue> values{};
+    NamedValue next("", Value(0));
     while (m_stream >> next)
         values.push_back(next);
 
     if (m_stream.eof()) return values;
-    else throw std::runtime_error("Invalid pyson value encountered in PysonFileReader::all()");
+    else throw std::runtime_error("Invalid pyson value encountered in FileReader::all()");
 }
 #endif // functions that work for both
-std::unordered_map<std::string, PysonValue> PysonFileReader::as_hashmap() {
+std::unordered_map<std::string, Value> FileReader::as_hashmap() {
     go_to_beginning();
-    std::unordered_map<std::string, PysonValue> map;
-    for (std::optional<NamedPysonValue> current = next(); current.has_value(); current = next()) {
-        NamedPysonValue& cref = current.value();
+    std::unordered_map<std::string, Value> map;
+    for (std::optional<NamedValue> current = next(); current.has_value(); current = next()) {
+        NamedValue& cref = current.value();
         if (map.contains(cref.name()))
-            throw std::runtime_error("Duplicate name encountered in PysonFileReader::as_hashmap()");
+            throw std::runtime_error("Duplicate name encountered in FileReader::as_hashmap()");
         map.insert(std::make_pair(cref.name(), cref.value()));
     }
     return map;
 }
 
-std::optional<PysonValue> PysonFileReader::value_with_name(const char *name) {
+std::optional<Value> FileReader::value_with_name(const char *name) {
     go_to_beginning();
-    for (std::optional<NamedPysonValue> current = next(); current.has_value(); current = next()) {
+    for (std::optional<NamedValue> current = next(); current.has_value(); current = next()) {
         if (current.value().name() == name)
             return current.value().value();
     }
     return std::nullopt;
 }
 
-void PysonFileReader::for_each(std::function<void (NamedPysonValue)> predicate) {
+void FileReader::for_each(std::function<void (NamedValue)> predicate) {
     for (auto v = next(); v != std::nullopt; v = next())
         predicate(v.value());
 }
 
 template <class Return>
-std::vector<Return> PysonFileReader::map_each(std::function<Return (NamedPysonValue)> predicate) {
+std::vector<Return> FileReader::map_each(std::function<Return (NamedValue)> predicate) {
     auto vec = std::vector<Return>{};
     for (auto v = next(); v != std::nullopt; v = next())
         vec.push_back(predicate(v));
     return vec;
 }
 
-void PysonFileReader::for_each_while(std::function<bool (NamedPysonValue)> predicate) {
+void FileReader::for_each_while(std::function<bool (NamedValue)> predicate) {
     for (auto v = next(); v != std::nullopt && predicate(v.value()); v = next())
         ; // no loop body
 }
 
 template <class Return>
-std::vector<Return> PysonFileReader::map_while(std::function<std::pair<bool, Return> (NamedPysonValue)> predicate) {
+std::vector<Return> FileReader::map_while(std::function<std::pair<bool, Return> (NamedValue)> predicate) {
     auto vec = std::vector<Return>{};
     for (auto val = next(); val != std::nullopt; val = next()) {
         auto res = predicate(val);
@@ -474,7 +476,7 @@ std::vector<Return> PysonFileReader::map_while(std::function<std::pair<bool, Ret
 }
 
 template <class Return>
-std::vector<Return> PysonFileReader::map_while(std::function<std::optional<Return> (NamedPysonValue)> predicate) {
+std::vector<Return> FileReader::map_while(std::function<std::optional<Return> (NamedValue)> predicate) {
     auto vec = std::vector<Return>{};
     for (auto val = next(); val != std::nullopt; val = next()) {
         auto res = predicate(val);
@@ -482,4 +484,6 @@ std::vector<Return> PysonFileReader::map_while(std::function<std::optional<Retur
         else vec.push_back(res.value());
     }
     return vec;
+}
+
 }
