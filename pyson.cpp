@@ -4,6 +4,7 @@
 #include <sstream>
 #include <new>
 #include <limits>
+#include <iostream>
 
 namespace pyson {
 
@@ -278,11 +279,13 @@ FileReader::FileReader(const std::string& path) : m_handle(fopen(path.c_str(), "
 
 std::optional<NamedValue> FileReader::next() {
     char *line = nullptr;
-    ssize_t len = getline(&line, nullptr, m_handle);
+    size_t s{};
+    ssize_t len = getline(&line, &s, m_handle);
     if (len == -1) return std::nullopt;
     
     
     std::istringstream str(std::string(line, len));
+    free((void*)line);
     NamedValue result("", Value(0));
     
     if (str >> result) return result;
@@ -290,17 +293,20 @@ std::optional<NamedValue> FileReader::next() {
 }
 NamedValue FileReader::next_or(const NamedValue& default_val) {
     char *line = nullptr;
-    ssize_t len = getline(&line, nullptr, m_handle);
+    size_t s{};
+    ssize_t len = getline(&line, &s, m_handle);
     if (len == -1) return default_val;
 
     std::istringstream str(std::string(line, len));
+    free((void*)line);
     NamedValue result("", Value(0));
     if (str >> result) return result;
     else throw std::runtime_error("Invalid pyson value encountered in FileReader::next_or()");
 }
 NamedValue FileReader::next_or(NamedValue&& default_val) {
     char *line = nullptr;
-    ssize_t len = getline(&line, nullptr, m_handle);
+    size_t s{};
+    ssize_t len = getline(&line, &s, m_handle);
     if (len == -1) return std::move(default_val);
 
     std::istringstream str(std::string(line, len));
@@ -310,11 +316,13 @@ NamedValue FileReader::next_or(NamedValue&& default_val) {
 }
 NamedValue FileReader::next_or_throw() {
     char *line = nullptr;
-    ssize_t len = getline(&line, nullptr, m_handle);
+    size_t s{};
+    ssize_t len = getline(&line, &s, m_handle);
     if (len == -1)
         throw std::runtime_error("EOF encountered in FileReader::next_or()");
 
     std::istringstream str(std::string(line, len));
+    free((void*)line);
     NamedValue result("", Value(0));
     if (str >> result) return result;
     else throw std::runtime_error("Invalid pyson value encountered in FileReader::next_or_throw()");
@@ -323,20 +331,28 @@ NamedValue FileReader::next_or_throw() {
 void FileReader::go_to_beginning() { rewind(m_handle); }
 void FileReader::go_to_line(size_t line_number) {
     go_to_beginning();
+    if (line_number == 0) return;
+    
     char *line = nullptr;
     size_t len = 0;
     for (size_t i = 0; i < line_number; i++) {
         if (-1 != getline(&line, &len, m_handle)) continue;
+        free((void*)line);
         throw std::runtime_error("File ended before requested line in FileReader::go_to_line()");
     }
+    free((void*)line);
 }
 void FileReader::skip_n_lines(size_t amount_to_skip) {
+    if (amount_to_skip == 0) return;
+    
     char *line = nullptr;
     size_t len = 0;
     for (size_t i = 0; i < amount_to_skip; i++) {
         if (-1 != getline(&line, &len, m_handle)) continue;
+        free((void*)line);
         throw std::runtime_error("File ended before requested line in FileReader::skip_n_lines()");
     }
+    free((void*)line);
 }
 
 std::vector<NamedValue> FileReader::all() {
@@ -349,9 +365,13 @@ std::vector<NamedValue> FileReader::all() {
     while (-1 != getline(&line, &len, m_handle)) {
         std::istringstream str(std::string(line, len));
         if (str >> next) values.push_back(next);
-        else throw std::runtime_error("Invalid pyson value encountered in FileReader::all()");
+        else {
+            free((void*)line);
+            throw std::runtime_error("Invalid pyson value encountered in FileReader::all()");
+        }
     }
 
+    free((void*)line);
     return values;
 }
 
@@ -527,13 +547,6 @@ NamedValue FileReader::Iter::operator*() {
     if (m_reader == nullptr)
         throw std::logic_error("Tried to dereference finished FileReader::Iter iterator");
     
-    auto opt = m_reader->next();
-    if (opt == std::nullopt) {
-        m_reader = nullptr;
-        return m_cached;
-    }
-    auto tmp = opt.value();
-    std::swap(tmp, m_cached);
     return m_cached;
 }
 
