@@ -453,7 +453,7 @@ public:
 
     public:
         /// Increment: go to next iteration
-        Iter operator++();
+        void operator++();
         /// Dereference: get the value
         NamedValue operator*();
         /// Not equal: check if the end has been reached

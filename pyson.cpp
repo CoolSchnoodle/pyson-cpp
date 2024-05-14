@@ -486,4 +486,60 @@ std::vector<Return> FileReader::map_while(std::function<std::optional<Return> (N
     return vec;
 }
 
+FileReader::Iter::Iter(FileReader *reader) : m_reader(reader), m_cached("", Value(0)) {
+    if (m_reader == nullptr)
+        return;
+    auto opt = m_reader->next();
+    if (opt == std::nullopt) {
+        m_reader = nullptr;
+        return;
+    }
+    m_cached = opt.value();
+}
+
+FileReader::End FileReader::end() { return End{}; }
+FileReader::Iter FileReader::begin() {
+#if POSIX_FUNCTIONS_AVAILABLE
+    int c;
+    if ((c = fgetc(m_handle)) == EOF)
+        return Iter(nullptr);
+    ungetc(c, m_handle);
+    return Iter(this);
+#else
+    if (m_stream.peek() == EOF)
+        return Iter(nullptr);
+    else return Iter(this);
+#endif
+}
+
+void FileReader::Iter::operator++() {
+    if (m_reader == nullptr)
+        return;
+    auto opt = m_reader->next();
+    if (!opt.has_value()) {
+        m_reader = nullptr;
+        return;
+    }
+    m_cached = opt.value();
+}
+
+NamedValue FileReader::Iter::operator*() {
+    if (m_reader == nullptr)
+        throw std::logic_error("Tried to dereference finished FileReader::Iter iterator");
+    
+    auto opt = m_reader->next();
+    if (opt == std::nullopt) {
+        m_reader = nullptr;
+        return m_cached;
+    }
+    auto tmp = opt.value();
+    std::swap(tmp, m_cached);
+    return m_cached;
+}
+
+bool FileReader::Iter::operator!=(const End& end) {
+    (void)end;
+    return m_reader != nullptr;
+}
+
 }
