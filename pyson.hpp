@@ -35,17 +35,19 @@ class FileReader;
  * An enum that says which type a Value is.
  * Values in pyson can either be integers, 64-bit floating point numbers, strings, or lists of strings.
  */
-enum class PysonType {
-    PysonInt,
-    PysonFloat,
-    PysonStr,
-    PysonList,
+enum class PysonType : unsigned char {
+    PysonInt = 0,
+    PysonFloat = 1,
+    PysonStr = 2,
+    PysonList = 4,
 };
 
 /**
  * An exception for when a specific pyson type was expected, but a different type was recieved.
  * WrongPysonType inherits from std::exception, so you can catch it as a std::exception&
- * just like most exceptions.
+ * just like most exceptions. Warning: the constructor of WrongPysonType will
+ * throw an exception if the type you expected is the same type as you got,
+ * this may cause an unrecoverable crash if it happens during exception handling.
  */
 class WrongPysonType : public std::exception {
     PysonType m_expected;
@@ -424,6 +426,44 @@ public:
      */
     template <class Return>
     std::vector<Return> map_while(std::function<std::optional<Return>(NamedValue)> predicate);
+
+    /**
+     * Functions and classes that allow FileReader to be used as an iterator.
+     * You should not ever use these, just do `for (NamedPysonValue value : reader) { ... }`
+     * where `reader` is a FileReader. Range-based for loops like that are much more understantable
+     * and less bug prone than the old iterator-based for loops, so use them.
+     * FileReader::begin() will NOT rewind the file despite the name.
+     */
+
+    /// Dummy class required because != is a binary operator
+    class End {};
+    
+    /// Iterator over the NamedValue values in the file
+    class Iter {
+        /// Pointer to the inner reader
+        FileReader *m_reader;
+        /// Cached next value
+        NamedValue m_cached;
+    
+        /// Private constructor (only for use by FileReader)
+        Iter(FileReader *reader);
+    
+        /// So a FileReader can construct an Iter
+        friend class FileReader;
+
+    public:
+        /// Increment: go to next iteration
+        Iter operator++();
+        /// Dereference: get the value
+        NamedValue operator*();
+        /// Not equal: check if the end has been reached
+        bool operator!=(const End& end);
+    };
+
+    /// Begin iterator
+    Iter begin();
+    /// End value
+    End end();
 };
 
 }
