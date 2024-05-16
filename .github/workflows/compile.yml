@@ -1,0 +1,23 @@
+name: Check that code compiles
+on: [push, pull_request]
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: compile with clang++ on linux
+        run: clang++ pyson.cpp -Wall -Wextra -std=c++20 -c
+      - name: compile with g++ on linux
+        run: g++ -c pyson.cpp -Wall -Wextra -std=c++20
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: compile with clang++ on macos
+        run: clang++ pyson.cpp -Wall -Wextra -std=c++20 -c
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: compile on windows
+        run: cl /c /EHsc pyson.cpp
