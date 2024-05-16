@@ -21,4 +21,4 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ilammy/msvc-dev-cmd@v1
       - name: compile on windows
-        run: cl /c /EHsc pyson.cpp
+        run: cl /c /EHsc /std:c++20 pyson.cpp
